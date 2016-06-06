@@ -5,7 +5,7 @@
 * clone the repository
 
 ```bash
-git clone xxx
+git clone git@github.com:bgshin/cnntweets.git
 ```
 * make virtual env
 
