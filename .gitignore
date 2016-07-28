@@ -67,7 +67,7 @@ indexdir
 *.gz
 
 cnn/runs/
-*.txt
+
 
 model*
 w2v_cnn/runs/
