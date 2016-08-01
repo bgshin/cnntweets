@@ -71,3 +71,4 @@ cnn/runs/
 
 model*
 w2v_cnn/runs/
+data
