@@ -65,7 +65,7 @@ class Timer(object):
 
 
 def load_w2v():
-    model_path = '/Users/bong/works/data/word2vec_twitter_model/word2vec_twitter_model.bin'
+    model_path = '../data/word2vec_twitter_model/word2vec_twitter_model.bin'
     with Timer("load w2v"):
         model = Word2Vec.load_word2vec_format(model_path, binary=True)
         print("The vocabulary size is: " + str(len(model.vocab)))
