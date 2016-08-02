@@ -19,9 +19,11 @@ import sys
 
 # Model Hyperparameters
 tf.flags.DEFINE_integer("embedding_dim", 400, "Dimensionality of character embedding (default: 128)")
-tf.flags.DEFINE_integer("embedding_dim_lex", 6, "Dimensionality of character embedding from LEXICON")
-# tf.flags.DEFINE_integer("embedding_dim_lex", 14, "Dimensionality of character embedding from LEXICON")
+tf.flags.DEFINE_integer("embedding_dim_lex", 2, "Dimensionality of character embedding from LEXICON")
+# tf.flags.DEFINE_integer("embedding_dim_lex", 6, "Dimensionality of character embedding from LEXICON")
 
+# tf.flags.DEFINE_integer("embedding_dim_lex", 4, "Dimensionality of character embedding from LEXICON")
+# tf.flags.DEFINE_integer("embedding_dim_lex", 14, "Dimensionality of character embedding from LEXICON")
 
 tf.flags.DEFINE_string("filter_sizes", "2,3,4,5", "Comma-separated filter sizes (default: '3,4,5')")
 tf.flags.DEFINE_integer("num_filters", 256, "Number of filters per filter size (default: 128)")
@@ -88,6 +90,14 @@ def load_lexicon_unigram():
                               'unigrams-pmilexicon.txt': [0],
                               'unigrams-pmilexicon_sentiment_140.txt': [0]}
 
+    elif FLAGS.embedding_dim_lex == 2:
+        default_vector_dic = {'EverythingUnigramsPMIHS.txt': [0],
+                              'unigrams-pmilexicon.txt': [0]}
+
+    elif FLAGS.embedding_dim_lex == 4:
+        default_vector_dic = {'EverythingUnigramsPMIHS.txt': [0],
+                              'unigrams-pmilexicon.txt': [0, 0, 0]}
+
     else:
         default_vector_dic = {'EverythingUnigramsPMIHS.txt':[0],
                           'HS-AFFLEX-NEGLEX-unigrams.txt':[0,0,0],
@@ -101,11 +111,14 @@ def load_lexicon_unigram():
     norm_model = [dict() for x in range(len(file_path))]
     for index, each_model in enumerate(raw_model):
         data_type = file_path[index].replace("../data/lexicon_data/", "")
+        if FLAGS.embedding_dim_lex == 2 or FLAGS.embedding_dim_lex == 4:
+            if data_type not in ['EverythingUnigramsPMIHS.txt', 'unigrams-pmilexicon.txt']:
+                continue
+
         default_vector = default_vector_dic[data_type]
 
         # print data_type, default_vector
         raw_model[index]["<PAD/>"] = default_vector
-
 
         with open(file_path[index], 'r') as document:
             for line in document:
@@ -114,7 +127,7 @@ def load_lexicon_unigram():
                 data_vec=[]
                 key=''
 
-                if FLAGS.embedding_dim_lex == 6:
+                if FLAGS.embedding_dim_lex == 2 or FLAGS.embedding_dim_lex == 6:
                     for idx, tk in enumerate(line_token):
                         if idx == 0:
                             key = tk
@@ -125,7 +138,7 @@ def load_lexicon_unigram():
                         else:
                             continue
 
-                else:
+                else: # 4 or 14
                     for idx, tk in enumerate(line_token):
                         if idx == 0:
                             key = tk
