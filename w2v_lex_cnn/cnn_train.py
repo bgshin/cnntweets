@@ -80,7 +80,7 @@ def load_w2v():
 
 
 def load_lexicon_unigram():
-    if embedding_dim_lex==6:
+    if FLAGS.embedding_dim_lex==6:
         default_vector_dic = {'EverythingUnigramsPMIHS.txt': [0],
                               'HS-AFFLEX-NEGLEX-unigrams.txt': [0],
                               'Maxdiff-Twitter-Lexicon_0to1.txt': [0.5],
@@ -114,7 +114,7 @@ def load_lexicon_unigram():
                 data_vec=[]
                 key=''
 
-                if embedding_dim_lex == 6:
+                if FLAGS.embedding_dim_lex == 6:
                     for idx, tk in enumerate(line_token):
                         if idx == 0:
                             key = tk
