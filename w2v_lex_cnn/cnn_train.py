@@ -107,8 +107,13 @@ def load_lexicon_unigram():
                           'unigrams-pmilexicon_sentiment_140.txt':[0,0,0]}
 
     file_path = ["../data/lexicon_data/"+files for files in os.listdir("../data/lexicon_data") if files.endswith(".txt")]
-    raw_model = [dict() for x in range(len(file_path))]
-    norm_model = [dict() for x in range(len(file_path))]
+    if FLAGS.embedding_dim_lex == 2 or FLAGS.embedding_dim_lex == 4:
+        raw_model = [dict() for x in range(2)]
+        norm_model = [dict() for x in range(2)]
+    else:
+        raw_model = [dict() for x in range(len(file_path))]
+        norm_model = [dict() for x in range(len(file_path))]
+
     for index, each_model in enumerate(raw_model):
         data_type = file_path[index].replace("../data/lexicon_data/", "")
         if FLAGS.embedding_dim_lex == 2 or FLAGS.embedding_dim_lex == 4:
