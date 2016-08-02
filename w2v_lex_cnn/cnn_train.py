@@ -110,15 +110,16 @@ def load_lexicon_unigram():
     if FLAGS.embedding_dim_lex == 2 or FLAGS.embedding_dim_lex == 4:
         raw_model = [dict() for x in range(2)]
         norm_model = [dict() for x in range(2)]
+        file_path = ['../data/lexicon_data/EverythingUnigramsPMIHS.txt', '../data/lexicon_data/unigrams-pmilexicon.txt']
     else:
         raw_model = [dict() for x in range(len(file_path))]
         norm_model = [dict() for x in range(len(file_path))]
 
     for index, each_model in enumerate(raw_model):
         data_type = file_path[index].replace("../data/lexicon_data/", "")
-        if FLAGS.embedding_dim_lex == 2 or FLAGS.embedding_dim_lex == 4:
-            if data_type not in ['EverythingUnigramsPMIHS.txt', 'unigrams-pmilexicon.txt']:
-                continue
+        # if FLAGS.embedding_dim_lex == 2 or FLAGS.embedding_dim_lex == 4:
+        #     if data_type not in ['EverythingUnigramsPMIHS.txt', 'unigrams-pmilexicon.txt']:
+        #         continue
 
         default_vector = default_vector_dic[data_type]
 
