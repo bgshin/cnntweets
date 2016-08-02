@@ -12,8 +12,19 @@ class TextCNN(object):
       embedding_size, filter_sizes, num_filters, embedding_size_lex, l2_reg_lambda=0.0):
         if embedding_size_lex == 6:
             num_filters_lex = 4
-        else:
+        elif embedding_size_lex == 14:
             num_filters_lex = 9
+
+        elif embedding_size_lex == 2:
+            num_filters_lex = 256
+
+        elif embedding_size_lex == 4:
+            num_filters_lex = 256
+
+        else:
+            num_filters_lex = 256
+
+
 
 
         # Placeholders for input, output and dropout
