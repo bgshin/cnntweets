@@ -10,6 +10,11 @@ class TextCNN(object):
     def __init__(
       self, sequence_length, num_classes,
       embedding_size, filter_sizes, num_filters, embedding_size_lex, l2_reg_lambda=0.0):
+        if embedding_size_lex == 6:
+            num_filters_lex = 4
+        else:
+            num_filters_lex = 9
+
 
         # Placeholders for input, output and dropout
         self.input_x = tf.placeholder(tf.float32, [None, sequence_length, embedding_size], name="input_x")
@@ -70,9 +75,10 @@ class TextCNN(object):
         for i, filter_size in enumerate(filter_sizes):
             with tf.name_scope("lexicon-conv-maxpool-%s" % filter_size):
                 # Convolution Layer
-                filter_shape = [filter_size, embedding_size_lex, 1, num_filters]
+
+                filter_shape = [filter_size, embedding_size_lex, 1, num_filters_lex]
                 W = tf.Variable(tf.truncated_normal(filter_shape, stddev=0.1), name="W")
-                b = tf.Variable(tf.constant(0.1, shape=[num_filters]), name="b")
+                b = tf.Variable(tf.constant(0.1, shape=[num_filters_lex]), name="b")
 
                 conv = tf.nn.conv2d(
                     self.embedded_chars_expanded_lexicon,
@@ -94,7 +100,7 @@ class TextCNN(object):
 
 
         # Combine all the pooled features
-        num_filters_total = num_filters * len(filter_sizes)*2
+        num_filters_total = num_filters * len(filter_sizes) + num_filters_lex * len(filter_sizes)
         self.h_pool = tf.concat(3, pooled_outputs)
         self.h_pool_flat = tf.reshape(self.h_pool, [-1, num_filters_total])
 

@@ -19,7 +19,8 @@ import sys
 
 # Model Hyperparameters
 tf.flags.DEFINE_integer("embedding_dim", 400, "Dimensionality of character embedding (default: 128)")
-tf.flags.DEFINE_integer("embedding_dim_lex", 14, "Dimensionality of character embedding from LEXICON")
+tf.flags.DEFINE_integer("embedding_dim_lex", 6, "Dimensionality of character embedding from LEXICON")
+# tf.flags.DEFINE_integer("embedding_dim_lex", 14, "Dimensionality of character embedding from LEXICON")
 
 
 tf.flags.DEFINE_string("filter_sizes", "2,3,4,5", "Comma-separated filter sizes (default: '3,4,5')")
@@ -79,12 +80,21 @@ def load_w2v():
 
 
 def load_lexicon_unigram():
-    default_vector_dic = {'EverythingUnigramsPMIHS.txt':[0],
-                      'HS-AFFLEX-NEGLEX-unigrams.txt':[0,0,0],
-                      'Maxdiff-Twitter-Lexicon_0to1.txt':[0.5],
-                      'S140-AFFLEX-NEGLEX-unigrams.txt':[0,0,0],
-                      'unigrams-pmilexicon.txt':[0,0,0],
-                      'unigrams-pmilexicon_sentiment_140.txt':[0,0,0]}
+    if embedding_dim_lex==6:
+        default_vector_dic = {'EverythingUnigramsPMIHS.txt': [0],
+                              'HS-AFFLEX-NEGLEX-unigrams.txt': [0],
+                              'Maxdiff-Twitter-Lexicon_0to1.txt': [0.5],
+                              'S140-AFFLEX-NEGLEX-unigrams.txt': [0],
+                              'unigrams-pmilexicon.txt': [0],
+                              'unigrams-pmilexicon_sentiment_140.txt': [0]}
+
+    else:
+        default_vector_dic = {'EverythingUnigramsPMIHS.txt':[0],
+                          'HS-AFFLEX-NEGLEX-unigrams.txt':[0,0,0],
+                          'Maxdiff-Twitter-Lexicon_0to1.txt':[0.5],
+                          'S140-AFFLEX-NEGLEX-unigrams.txt':[0,0,0],
+                          'unigrams-pmilexicon.txt':[0,0,0],
+                          'unigrams-pmilexicon_sentiment_140.txt':[0,0,0]}
 
     file_path = ["../data/lexicon_data/"+files for files in os.listdir("../data/lexicon_data") if files.endswith(".txt")]
     raw_model = [dict() for x in range(len(file_path))]
@@ -103,11 +113,25 @@ def load_lexicon_unigram():
 
                 data_vec=[]
                 key=''
-                for idx, tk in enumerate(line_token):
-                    if idx == 0:
-                        key = tk
-                    else:
-                        data_vec.append(float(tk))
+
+                if embedding_dim_lex == 6:
+                    for idx, tk in enumerate(line_token):
+                        if idx == 0:
+                            key = tk
+
+                        elif idx == 1:
+                            data_vec.append(float(tk))
+
+                        else:
+                            continue
+
+                else:
+                    for idx, tk in enumerate(line_token):
+                        if idx == 0:
+                            key = tk
+                        else:
+                            data_vec.append(float(tk))
+
 
                 assert(key != '')
                 each_model[key] = data_vec
