@@ -169,7 +169,7 @@ def load_lexicon_unigram():
 
             new_val[:, i] = values[:, i] / mmax
 
-        keys = raw_model[1].keys()
+        keys = raw_model[index].keys()
         dictionary = dict(zip(keys, new_val))
         norm_model[index] = dictionary
 
