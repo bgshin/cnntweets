@@ -16,10 +16,10 @@ class TextCNN(object):
             num_filters_lex = 9
 
         elif embedding_size_lex == 2:
-            num_filters_lex = 256
+            num_filters_lex = 2
 
         elif embedding_size_lex == 4:
-            num_filters_lex = 256
+            num_filters_lex = 3
 
         else:
             num_filters_lex = 256
