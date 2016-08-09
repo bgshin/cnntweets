@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+import argparse
 
 import tensorflow as tf
 import numpy as np
@@ -81,8 +82,8 @@ def load_w2v():
 
 
 
-def load_lexicon_unigram():
-    if FLAGS.embedding_dim_lex==6:
+def load_lexicon_unigram(lexdim):
+    if lexdim==6:
         default_vector_dic = {'EverythingUnigramsPMIHS.txt': [0],
                               'HS-AFFLEX-NEGLEX-unigrams.txt': [0],
                               'Maxdiff-Twitter-Lexicon_0to1.txt': [0.5],
@@ -90,11 +91,11 @@ def load_lexicon_unigram():
                               'unigrams-pmilexicon.txt': [0],
                               'unigrams-pmilexicon_sentiment_140.txt': [0]}
 
-    elif FLAGS.embedding_dim_lex == 2:
+    elif lexdim == 2:
         default_vector_dic = {'EverythingUnigramsPMIHS.txt': [0],
                               'unigrams-pmilexicon.txt': [0]}
 
-    elif FLAGS.embedding_dim_lex == 4:
+    elif lexdim == 4:
         default_vector_dic = {'EverythingUnigramsPMIHS.txt': [0],
                               'unigrams-pmilexicon.txt': [0, 0, 0]}
 
@@ -107,7 +108,7 @@ def load_lexicon_unigram():
                           'unigrams-pmilexicon_sentiment_140.txt':[0,0,0]}
 
     file_path = ["../data/lexicon_data/"+files for files in os.listdir("../data/lexicon_data") if files.endswith(".txt")]
-    if FLAGS.embedding_dim_lex == 2 or FLAGS.embedding_dim_lex == 4:
+    if lexdim == 2 or lexdim == 4:
         raw_model = [dict() for x in range(2)]
         norm_model = [dict() for x in range(2)]
         file_path = ['../data/lexicon_data/EverythingUnigramsPMIHS.txt', '../data/lexicon_data/unigrams-pmilexicon.txt']
@@ -117,7 +118,7 @@ def load_lexicon_unigram():
 
     for index, each_model in enumerate(raw_model):
         data_type = file_path[index].replace("../data/lexicon_data/", "")
-        # if FLAGS.embedding_dim_lex == 2 or FLAGS.embedding_dim_lex == 4:
+        # if lexdim == 2 or lexdim == 4:
         #     if data_type not in ['EverythingUnigramsPMIHS.txt', 'unigrams-pmilexicon.txt']:
         #         continue
 
@@ -133,7 +134,7 @@ def load_lexicon_unigram():
                 data_vec=[]
                 key=''
 
-                if FLAGS.embedding_dim_lex == 2 or FLAGS.embedding_dim_lex == 6:
+                if lexdim == 2 or lexdim == 6:
                     for idx, tk in enumerate(line_token):
                         if idx == 0:
                             key = tk
@@ -171,230 +172,248 @@ def load_lexicon_unigram():
 
         keys = raw_model[index].keys()
         dictionary = dict(zip(keys, new_val))
+        dictionary["<PAD/>"] = default_vector
+
         norm_model[index] = dictionary
 
         data_type = file_path[index].replace("../data/lexicon_data/", "")
         default_vector = default_vector_dic[data_type]
 
-        dictionary["<PAD/>"] = default_vector
+
         # models.append(dictionary)
 
     return norm_model, raw_model
 
+def run_train(lexdim, lexfiltersize):
+    with Timer("lex"):
+        norm_model, raw_model = load_lexicon_unigram(lexdim)
 
-with Timer("lex"):
-    norm_model, raw_model = load_lexicon_unigram()
+    with Timer("w2v"):
+        w2vmodel = load_w2v()
 
-with Timer("w2v"):
-    w2vmodel = load_w2v()
+    unigram_lexicon_model = norm_model
+    # unigram_lexicon_model = raw_model
 
-unigram_lexicon_model = norm_model
-# unigram_lexicon_model = raw_model
-
-x_train, y_train, x_lex_train = cnn_data_helpers.load_data('trn',w2vmodel, unigram_lexicon_model, max_len)
-x_dev, y_dev, x_lex_dev = cnn_data_helpers.load_data('dev', w2vmodel, unigram_lexicon_model, max_len)
-x_test, y_test, x_lex_test  = cnn_data_helpers.load_data('tst', w2vmodel, unigram_lexicon_model, max_len)
-
-
-# x_train, y_train = cnn_data_helpers.load_data('trn',w2vmodel , max_len)
-# x_dev, y_dev = cnn_data_helpers.load_data('dev', w2vmodel, max_len)
-# x_test, y_test  = cnn_data_helpers.load_data('tst', w2vmodel, max_len)
-del(w2vmodel)
-del(norm_model)
-del(raw_model)
-gc.collect()
-
-print("Train/Dev split: {:d}/{:d}".format(len(y_train), len(y_dev)))
+    x_train, y_train, x_lex_train = cnn_data_helpers.load_data('trn',w2vmodel, unigram_lexicon_model, max_len)
+    x_dev, y_dev, x_lex_dev = cnn_data_helpers.load_data('dev', w2vmodel, unigram_lexicon_model, max_len)
+    x_test, y_test, x_lex_test  = cnn_data_helpers.load_data('tst', w2vmodel, unigram_lexicon_model, max_len)
 
 
-# Training
-# ==================================================
+    # x_train, y_train = cnn_data_helpers.load_data('trn',w2vmodel , max_len)
+    # x_dev, y_dev = cnn_data_helpers.load_data('dev', w2vmodel, max_len)
+    # x_test, y_test  = cnn_data_helpers.load_data('tst', w2vmodel, max_len)
+    del(w2vmodel)
+    del(norm_model)
+    del(raw_model)
+    gc.collect()
 
-with tf.Graph().as_default():
-    max_af1_dev = 0
-    index_at_max_af1_dev = 0
-    af1_tst_at_max_af1_dev = 0
+    print("Train/Dev split: {:d}/{:d}".format(len(y_train), len(y_dev)))
 
-    session_conf = tf.ConfigProto(
-      allow_soft_placement=FLAGS.allow_soft_placement,
-      log_device_placement=FLAGS.log_device_placement)
-    sess = tf.Session(config=session_conf)
-    with sess.as_default():
-        cnn = TextCNN(
-            sequence_length=x_train.shape[1],
-            num_classes=3,
-            embedding_size=FLAGS.embedding_dim,
-            embedding_size_lex=FLAGS.embedding_dim_lex,
-            filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
-            num_filters=FLAGS.num_filters,
-            l2_reg_lambda=FLAGS.l2_reg_lambda)
 
-        # Define Training procedure
-        global_step = tf.Variable(0, name="global_step", trainable=False)
-        optimizer = tf.train.AdamOptimizer(1e-3)
-        grads_and_vars = optimizer.compute_gradients(cnn.loss)
-        train_op = optimizer.apply_gradients(grads_and_vars, global_step=global_step)
+    # Training
+    # ==================================================
 
-        # Keep track of gradient values and sparsity (optional)
-        grad_summaries = []
-        for g, v in grads_and_vars:
-            if g is not None:
-                grad_hist_summary = tf.histogram_summary("{}/grad/hist".format(v.name), g)
-                sparsity_summary = tf.scalar_summary("{}/grad/sparsity".format(v.name), tf.nn.zero_fraction(g))
-                grad_summaries.append(grad_hist_summary)
-                grad_summaries.append(sparsity_summary)
-        grad_summaries_merged = tf.merge_summary(grad_summaries)
+    with tf.Graph().as_default():
+        max_af1_dev = 0
+        index_at_max_af1_dev = 0
+        af1_tst_at_max_af1_dev = 0
 
-        # Output directory for models and summaries
-        timestamp = str(int(time.time()))
-        out_dir = os.path.abspath(os.path.join(os.path.curdir, "runs", timestamp))
-        print("Writing to {}\n".format(out_dir))
+        session_conf = tf.ConfigProto(
+          allow_soft_placement=FLAGS.allow_soft_placement,
+          log_device_placement=FLAGS.log_device_placement)
+        sess = tf.Session(config=session_conf)
+        with sess.as_default():
+            cnn = TextCNN(
+                sequence_length=x_train.shape[1],
+                num_classes=3,
+                embedding_size=FLAGS.embedding_dim,
+                embedding_size_lex=lexdim,
+                lex_filter_size = lexfiltersize,
+                filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
+                num_filters=FLAGS.num_filters,
+                l2_reg_lambda=FLAGS.l2_reg_lambda)
 
-        # Summaries for loss and accuracy
-        loss_summary = tf.scalar_summary("loss", cnn.loss)
-        acc_summary = tf.scalar_summary("accuracy", cnn.accuracy)
-        f1_summary = tf.scalar_summary("avg_f1", cnn.avg_f1)
+            # Define Training procedure
+            global_step = tf.Variable(0, name="global_step", trainable=False)
+            optimizer = tf.train.AdamOptimizer(1e-3)
+            grads_and_vars = optimizer.compute_gradients(cnn.loss)
+            train_op = optimizer.apply_gradients(grads_and_vars, global_step=global_step)
 
-        # Train Summaries
-        train_summary_op = tf.merge_summary([loss_summary, acc_summary, f1_summary, grad_summaries_merged])
-        train_summary_dir = os.path.join(out_dir, "summaries", "train")
-        train_summary_writer = tf.train.SummaryWriter(train_summary_dir, sess.graph_def)
+            # Keep track of gradient values and sparsity (optional)
+            grad_summaries = []
+            for g, v in grads_and_vars:
+                if g is not None:
+                    grad_hist_summary = tf.histogram_summary("{}/grad/hist".format(v.name), g)
+                    sparsity_summary = tf.scalar_summary("{}/grad/sparsity".format(v.name), tf.nn.zero_fraction(g))
+                    grad_summaries.append(grad_hist_summary)
+                    grad_summaries.append(sparsity_summary)
+            grad_summaries_merged = tf.merge_summary(grad_summaries)
 
-        # Dev summaries
-        dev_summary_op = tf.merge_summary([loss_summary, acc_summary, f1_summary])
-        dev_summary_dir = os.path.join(out_dir, "summaries", "dev")
-        dev_summary_writer = tf.train.SummaryWriter(dev_summary_dir, sess.graph_def)
+            # Output directory for models and summaries
+            timestamp = str(int(time.time()))
+            out_dir = os.path.abspath(os.path.join(os.path.curdir, "runs", timestamp))
+            print("Writing to {}\n".format(out_dir))
 
-        # Test summaries
-        test_summary_op = tf.merge_summary([loss_summary, acc_summary, f1_summary])
-        test_summary_dir = os.path.join(out_dir, "summaries", "test")
-        test_summary_writer = tf.train.SummaryWriter(test_summary_dir, sess.graph_def)
+            # Summaries for loss and accuracy
+            loss_summary = tf.scalar_summary("loss", cnn.loss)
+            acc_summary = tf.scalar_summary("accuracy", cnn.accuracy)
+            f1_summary = tf.scalar_summary("avg_f1", cnn.avg_f1)
 
-        # Checkpoint directory. Tensorflow assumes this directory already exists so we need to create it
-        checkpoint_dir = os.path.abspath(os.path.join(out_dir, "checkpoints"))
-        checkpoint_prefix = os.path.join(checkpoint_dir, "model")
-        if not os.path.exists(checkpoint_dir):
-            os.makedirs(checkpoint_dir)
-        saver = tf.train.Saver(tf.all_variables())
+            # Train Summaries
+            train_summary_op = tf.merge_summary([loss_summary, acc_summary, f1_summary, grad_summaries_merged])
+            train_summary_dir = os.path.join(out_dir, "summaries", "train")
+            train_summary_writer = tf.train.SummaryWriter(train_summary_dir, sess.graph_def)
 
-        # Initialize all variables
-        sess.run(tf.initialize_all_variables())
+            # Dev summaries
+            dev_summary_op = tf.merge_summary([loss_summary, acc_summary, f1_summary])
+            dev_summary_dir = os.path.join(out_dir, "summaries", "dev")
+            dev_summary_writer = tf.train.SummaryWriter(dev_summary_dir, sess.graph_def)
 
-        def train_step(x_batch, y_batch, x_batch_lex):
-            """
-            A single training step
-            """
-            feed_dict = {
-                cnn.input_x: x_batch,
-                cnn.input_y: y_batch,
-                # lexicon
-                cnn.input_x_lexicon: x_batch_lex,
-                cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
-            }
-            _, step, summaries, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1 = sess.run(
-                [train_op, global_step, train_summary_op, cnn.loss, cnn.accuracy,
-                 cnn.neg_r, cnn.neg_p, cnn.f1_neg, cnn.f1_pos, cnn.avg_f1],
-                feed_dict)
-            time_str = datetime.datetime.now().isoformat()
-            # print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
-            print("{}: step {}, loss {:g}, acc {:g}, neg_r {:g} neg_p {:g} f1_neg {:g}, f1_pos {:g}, f1 {:g}".
-                  format(time_str, step, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1))
-            train_summary_writer.add_summary(summaries, step)
+            # Test summaries
+            test_summary_op = tf.merge_summary([loss_summary, acc_summary, f1_summary])
+            test_summary_dir = os.path.join(out_dir, "summaries", "test")
+            test_summary_writer = tf.train.SummaryWriter(test_summary_dir, sess.graph_def)
 
-        def dev_step(x_batch, y_batch, x_batch_lex, writer=None):
-            """
-            Evaluates model on a dev set
-            """
-            feed_dict = {
-                cnn.input_x: x_batch,
-                cnn.input_y: y_batch,
-                # lexicon
-                cnn.input_x_lexicon: x_batch_lex,
-                cnn.dropout_keep_prob: 1.0
-            }
-            step, summaries, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1 = sess.run(
-                [global_step, dev_summary_op, cnn.loss, cnn.accuracy,
-                 cnn.neg_r, cnn.neg_p, cnn.f1_neg, cnn.f1_pos, cnn.avg_f1],
-                feed_dict)
-            time_str = datetime.datetime.now().isoformat()
-            print("{}: step {}, loss {:g}, acc {:g}, neg_r {:g} neg_p {:g} f1_neg {:g}, f1_pos {:g}, f1 {:g}".
-                  format(time_str, step, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1))
-            if writer:
-                writer.add_summary(summaries, step)
+            # Checkpoint directory. Tensorflow assumes this directory already exists so we need to create it
+            checkpoint_dir = os.path.abspath(os.path.join(out_dir, "checkpoints"))
+            checkpoint_prefix = os.path.join(checkpoint_dir, "model")
+            if not os.path.exists(checkpoint_dir):
+                os.makedirs(checkpoint_dir)
+            saver = tf.train.Saver(tf.all_variables())
 
-            return avg_f1
-            # if avg_f1>56:
-            #     return True
-            #
-            # else:
-            #     return False
+            # Initialize all variables
+            sess.run(tf.initialize_all_variables())
 
-        def test_step(x_batch, y_batch, x_batch_lex, writer=None):
-            """
-            Evaluates model on a test set
-            """
-            feed_dict = {
-                cnn.input_x: x_batch,
-                cnn.input_y: y_batch,
-                # lexicon
-                cnn.input_x_lexicon: x_batch_lex,
-                cnn.dropout_keep_prob: 1.0
-            }
-            step, summaries, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1 = sess.run(
-                [global_step, dev_summary_op, cnn.loss, cnn.accuracy,
-                 cnn.neg_r, cnn.neg_p, cnn.f1_neg, cnn.f1_pos, cnn.avg_f1],
-                feed_dict)
-            time_str = datetime.datetime.now().isoformat()
-            print("{}: step {}, loss {:g}, acc {:g}, neg_r {:g} neg_p {:g} f1_neg {:g}, f1_pos {:g}, f1 {:g}".
-                  format(time_str, step, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1))
-            if writer:
-                writer.add_summary(summaries, step)
+            def train_step(x_batch, y_batch, x_batch_lex):
+                """
+                A single training step
+                """
+                feed_dict = {
+                    cnn.input_x: x_batch,
+                    cnn.input_y: y_batch,
+                    # lexicon
+                    cnn.input_x_lexicon: x_batch_lex,
+                    cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
+                }
+                _, step, summaries, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1 = sess.run(
+                    [train_op, global_step, train_summary_op, cnn.loss, cnn.accuracy,
+                     cnn.neg_r, cnn.neg_p, cnn.f1_neg, cnn.f1_pos, cnn.avg_f1],
+                    feed_dict)
+                time_str = datetime.datetime.now().isoformat()
+                # print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
+                print("{}: step {}, loss {:g}, acc {:g}, neg_r {:g} neg_p {:g} f1_neg {:g}, f1_pos {:g}, f1 {:g}".
+                      format(time_str, step, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1))
+                train_summary_writer.add_summary(summaries, step)
 
-            # if avg_f1 > 56:
-            #     return True
-            #
-            # else:
-            #     return False
+            def dev_step(x_batch, y_batch, x_batch_lex, writer=None):
+                """
+                Evaluates model on a dev set
+                """
+                feed_dict = {
+                    cnn.input_x: x_batch,
+                    cnn.input_y: y_batch,
+                    # lexicon
+                    cnn.input_x_lexicon: x_batch_lex,
+                    cnn.dropout_keep_prob: 1.0
+                }
+                step, summaries, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1 = sess.run(
+                    [global_step, dev_summary_op, cnn.loss, cnn.accuracy,
+                     cnn.neg_r, cnn.neg_p, cnn.f1_neg, cnn.f1_pos, cnn.avg_f1],
+                    feed_dict)
+                time_str = datetime.datetime.now().isoformat()
+                print("{}: step {}, loss {:g}, acc {:g}, neg_r {:g} neg_p {:g} f1_neg {:g}, f1_pos {:g}, f1 {:g}".
+                      format(time_str, step, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1))
+                if writer:
+                    writer.add_summary(summaries, step)
 
-            return avg_f1
+                return avg_f1
+                # if avg_f1>56:
+                #     return True
+                #
+                # else:
+                #     return False
 
-        # Generate batches
-        batches = cnn_data_helpers.batch_iter(
-            list(zip(x_train, y_train, x_lex_train)), FLAGS.batch_size, FLAGS.num_epochs)
-        # Training loop. For each batch...
-        for batch in batches:
-            x_batch, y_batch, x_batch_lex = zip(*batch)
-            train_step(x_batch, y_batch, x_batch_lex)
-            current_step = tf.train.global_step(sess, global_step)
-            if current_step % FLAGS.evaluate_every == 0:
-                print("\nEvaluation:")
-                curr_af1_dev = dev_step(x_dev, y_dev, x_lex_dev, writer=dev_summary_writer)
-                    # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
-                    # print("Saved model checkpoint to {}\n".format(path))
-                print("")
+            def test_step(x_batch, y_batch, x_batch_lex, writer=None):
+                """
+                Evaluates model on a test set
+                """
+                feed_dict = {
+                    cnn.input_x: x_batch,
+                    cnn.input_y: y_batch,
+                    # lexicon
+                    cnn.input_x_lexicon: x_batch_lex,
+                    cnn.dropout_keep_prob: 1.0
+                }
+                step, summaries, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1 = sess.run(
+                    [global_step, dev_summary_op, cnn.loss, cnn.accuracy,
+                     cnn.neg_r, cnn.neg_p, cnn.f1_neg, cnn.f1_pos, cnn.avg_f1],
+                    feed_dict)
+                time_str = datetime.datetime.now().isoformat()
+                print("{}: step {}, loss {:g}, acc {:g}, neg_r {:g} neg_p {:g} f1_neg {:g}, f1_pos {:g}, f1 {:g}".
+                      format(time_str, step, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1))
+                if writer:
+                    writer.add_summary(summaries, step)
 
-                print("\nTest:")
-                curr_af1_tst = test_step(x_test, y_test, x_lex_test, writer=test_summary_writer)
-                    # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
-                    # print("Saved model checkpoint to {}\n".format(path))
-                print("")
+                # if avg_f1 > 56:
+                #     return True
+                #
+                # else:
+                #     return False
 
-                if curr_af1_dev > max_af1_dev:
-                    max_af1_dev = curr_af1_dev
-                    index_at_max_af1_dev = current_step
-                    af1_tst_at_max_af1_dev = curr_af1_tst
+                return avg_f1
 
-                print '\nStatus:\n[%d] Max f1 for dev (%f), Max f1 for tst (%f)\n' % (
-                    index_at_max_af1_dev, max_af1_dev, af1_tst_at_max_af1_dev)
-                sys.stdout.flush()
+            # Generate batches
+            batches = cnn_data_helpers.batch_iter(
+                list(zip(x_train, y_train, x_lex_train)), FLAGS.batch_size, FLAGS.num_epochs)
+            # Training loop. For each batch...
+            for batch in batches:
+                x_batch, y_batch, x_batch_lex = zip(*batch)
+                train_step(x_batch, y_batch, x_batch_lex)
+                current_step = tf.train.global_step(sess, global_step)
+                if current_step % FLAGS.evaluate_every == 0:
+                    print("\nEvaluation:")
+                    curr_af1_dev = dev_step(x_dev, y_dev, x_lex_dev, writer=dev_summary_writer)
+                        # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
+                        # print("Saved model checkpoint to {}\n".format(path))
+                    print("")
 
-            # if current_step % FLAGS.test_every == 0:
-            #     print("\nTest:")
-            #     if test_step(x_test, y_test, writer=test_summary_writer) is True:
-            #         path = saver.save(sess, checkpoint_prefix, global_step=current_step)
-            #         print("Saved model checkpoint to {}\n".format(path))
-            #     print("")
+                    print("\nTest:")
+                    curr_af1_tst = test_step(x_test, y_test, x_lex_test, writer=test_summary_writer)
+                        # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
+                        # print("Saved model checkpoint to {}\n".format(path))
+                    print("")
 
-            # if current_step % FLAGS.checkpoint_every == 0:
-            #     path = saver.save(sess, checkpoint_prefix, global_step=current_step)
-            #     print("Saved model checkpoint to {}\n".format(path))
+                    if curr_af1_dev > max_af1_dev:
+                        max_af1_dev = curr_af1_dev
+                        index_at_max_af1_dev = current_step
+                        af1_tst_at_max_af1_dev = curr_af1_tst
+
+                    print '\nStatus:\n[%d] Max f1 for dev (%f), Max f1 for tst (%f)\n' % (
+                        index_at_max_af1_dev, max_af1_dev, af1_tst_at_max_af1_dev)
+                    sys.stdout.flush()
+
+                # if current_step % FLAGS.test_every == 0:
+                #     print("\nTest:")
+                #     if test_step(x_test, y_test, writer=test_summary_writer) is True:
+                #         path = saver.save(sess, checkpoint_prefix, global_step=current_step)
+                #         print("Saved model checkpoint to {}\n".format(path))
+                #     print("")
+
+                # if current_step % FLAGS.checkpoint_every == 0:
+                #     path = saver.save(sess, checkpoint_prefix, global_step=current_step)
+                #     print("Saved model checkpoint to {}\n".format(path))
+
+
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("lexdim")
+    parser.add_argument("filtersize")
+    args = parser.parse_args()
+    program = os.path.basename(sys.argv[0])
+
+    print 'lexdim(%d), lexfilter(%d)' % (args.lexdim, args.filtersize)
+    run_train(args.lexdim, args.filtersize)
+
+

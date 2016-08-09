@@ -78,14 +78,11 @@ def load_lexicon_unigram():
 
         new_val[:, i] = values[:, i] / mmax
 
-    keys = raw_model[1].keys()
+    keys = raw_model.keys()
     dictionary = dict(zip(keys, new_val))
-    norm_model[index] = dictionary
-
-    data_type = file_path[index].replace("../data/lexicon_data/", "")
-    default_vector = default_vector_dic[data_type]
-
     dictionary["<PAD/>"] = default_vector
+
+    norm_model = dictionary
     # models.append(dictionary)
 
     return norm_model, raw_model

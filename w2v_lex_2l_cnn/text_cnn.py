@@ -9,8 +9,21 @@ class TextCNN(object):
     """
     def __init__(
       self, sequence_length, num_classes,
-      embedding_size, filter_sizes, num_filters, embedding_size_lex, l2_reg_lambda=0.0):
-        num_filters_lex = 256
+      embedding_size, filter_sizes, num_filters, embedding_size_lex, lex_filter_size, permsel, l2_reg_lambda=0.0):
+        num_filters_lex = lex_filter_size
+        # num_filters_lex = 256
+
+        if permsel==0:
+            perm = [0, 1, 2, 3, 4, 5, 6, 7]
+
+        elif permsel==1:
+            perm = [3, 2, 1, 0, 4, 5, 6, 7]
+
+        elif permsel==2:
+            perm = [0, 1, 2, 3, 7, 6, 5, 4]
+
+        else:
+            perm = [0, 4, 1, 5, 2, 6, 3, 7]
 
         # Placeholders for input, output and dropout
         self.input_x = tf.placeholder(tf.float32, [None, sequence_length, embedding_size], name="input_x")
@@ -102,10 +115,7 @@ class TextCNN(object):
         hidden_sequence_length = len(pooled_outputs)
         hidden_embedding_size = 256
         input_hidden = np.zeros((hidden_sequence_length, hidden_embedding_size))
-        perm = [0, 1, 2, 3, 4, 5, 6, 7]
-        # perm = [3, 2, 1, 0, 4, 5, 6, 7]
-        # perm = [0, 1, 2, 3, 7, 6, 5, 4]
-        # perm = [0, 4, 1, 5, 2, 6, 3, 7]
+
 
         pooled_outputs_perm = [pooled_outputs[i] for i in perm]
 

@@ -9,22 +9,21 @@ class TextCNN(object):
     """
     def __init__(
       self, sequence_length, num_classes,
-      embedding_size, filter_sizes, num_filters, embedding_size_lex, l2_reg_lambda=0.0):
-        if embedding_size_lex == 6:
-            num_filters_lex = 4
-        elif embedding_size_lex == 14:
-            num_filters_lex = 9
-
-        elif embedding_size_lex == 2:
-            num_filters_lex = 2
-
-        elif embedding_size_lex == 4:
-            num_filters_lex = 3
-
-        else:
-            num_filters_lex = 256
-
-
+      embedding_size, filter_sizes, num_filters, embedding_size_lex, lex_filter_size, l2_reg_lambda=0.0):
+        # if embedding_size_lex == 6:
+        #     num_filters_lex = 4
+        # elif embedding_size_lex == 14:
+        #     num_filters_lex = 9
+        #
+        # elif embedding_size_lex == 2:
+        #     num_filters_lex = 2
+        #
+        # elif embedding_size_lex == 4:
+        #     num_filters_lex = 3
+        #
+        # else:
+        #     num_filters_lex = 256
+        num_filters_lex = lex_filter_size
 
 
         # Placeholders for input, output and dropout
