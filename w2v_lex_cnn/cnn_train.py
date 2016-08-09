@@ -21,10 +21,7 @@ import sys
 # Model Hyperparameters
 tf.flags.DEFINE_integer("embedding_dim", 400, "Dimensionality of character embedding (default: 128)")
 tf.flags.DEFINE_integer("embedding_dim_lex", 2, "Dimensionality of character embedding from LEXICON")
-# tf.flags.DEFINE_integer("embedding_dim_lex", 6, "Dimensionality of character embedding from LEXICON")
-
-# tf.flags.DEFINE_integer("embedding_dim_lex", 4, "Dimensionality of character embedding from LEXICON")
-# tf.flags.DEFINE_integer("embedding_dim_lex", 14, "Dimensionality of character embedding from LEXICON")
+tf.flags.DEFINE_integer("lex_filter_size", 2, "Dimensionality of character embedding from LEXICON")
 
 tf.flags.DEFINE_string("filter_sizes", "2,3,4,5", "Comma-separated filter sizes (default: '3,4,5')")
 tf.flags.DEFINE_integer("num_filters", 256, "Number of filters per filter size (default: 128)")
@@ -48,13 +45,6 @@ for attr, value in sorted(FLAGS.__flags.items()):
     print("{}={}".format(attr.upper(), value))
 print("")
 
-
-# Data Preparatopn
-# ==================================================
-
-# Load data
-print("Loading data...")
-max_len = 60
 
 
 
@@ -185,6 +175,8 @@ def load_lexicon_unigram(lexdim):
     return norm_model, raw_model
 
 def run_train(lexdim, lexfiltersize):
+    max_len = 60
+
     with Timer("lex"):
         norm_model, raw_model = load_lexicon_unigram(lexdim)
 
@@ -413,7 +405,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     program = os.path.basename(sys.argv[0])
 
-    print 'lexdim(%d), lexfilter(%d)' % (args.lexdim, args.filtersize)
-    run_train(args.lexdim, args.filtersize)
+    print 'lexdim(%d), lexfilter(%d)' % (int(args.lexdim), int(args.filtersize))
+    run_train(int(args.lexdim), int(args.filtersize))
 
 
