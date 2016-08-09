@@ -63,12 +63,13 @@ class Timer(object):
 
 
 def load_w2v():
-    model_path = '../data/word2vec_twitter_model/word2vec_twitter_model.bin'
-    with Timer("load w2v"):
-        model = Word2Vec.load_word2vec_format(model_path, binary=True)
-        print("The vocabulary size is: " + str(len(model.vocab)))
-
-    return model
+    return {}
+    # model_path = '../data/word2vec_twitter_model/word2vec_twitter_model.bin'
+    # with Timer("load w2v"):
+    #     model = Word2Vec.load_word2vec_format(model_path, binary=True)
+    #     print("The vocabulary size is: " + str(len(model.vocab)))
+    #
+    # return model
 
 
 
@@ -162,15 +163,9 @@ def load_lexicon_unigram(lexdim):
 
         keys = raw_model[index].keys()
         dictionary = dict(zip(keys, new_val))
-        dictionary["<PAD/>"] = default_vector
 
         norm_model[index] = dictionary
 
-        data_type = file_path[index].replace("../data/lexicon_data/", "")
-        default_vector = default_vector_dic[data_type]
-
-
-        # models.append(dictionary)
 
     return norm_model, raw_model
 
@@ -400,12 +395,12 @@ def run_train(lexdim, lexfiltersize):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("lexdim")
-    parser.add_argument("filtersize")
+    parser.add_argument('--lexdim', default=14, type=int)
+    parser.add_argument('--filtersize', default=9, type=int)
     args = parser.parse_args()
     program = os.path.basename(sys.argv[0])
 
-    print 'lexdim(%d), lexfilter(%d)' % (int(args.lexdim), int(args.filtersize))
-    run_train(int(args.lexdim), int(args.filtersize))
+    print 'lexdim(%d), lexfilter(%d)' % (args.lexdim, args.filtersize)
+    run_train(args.lexdim, args.filtersize)
 
 

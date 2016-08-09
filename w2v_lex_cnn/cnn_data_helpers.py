@@ -112,6 +112,9 @@ def build_input_data_with_w2v(sentences, labels, w2vmodel, lexiconModel):
                 temp = np.array(np.float32(eachModel["<PAD/>"]))
             lexiconList = np.append(lexiconList, temp)
 
+        if len(lexiconList)>14:
+            print len(lexiconList)
+            print '======================over 14======================'
         return lexiconList
 
     x = np.array([[get_index_of_voca(w2vmodel,word) for word in sentence] for sentence in sentences])

@@ -172,15 +172,9 @@ def load_lexicon_unigram(lexdim):
 
         keys = raw_model[index].keys()
         dictionary = dict(zip(keys, new_val))
-        dictionary["<PAD/>"] = default_vector
 
         norm_model[index] = dictionary
 
-        data_type = file_path[index].replace("../data/lexicon_data/", "")
-        default_vector = default_vector_dic[data_type]
-
-
-        # models.append(dictionary)
 
     return norm_model, raw_model
 
