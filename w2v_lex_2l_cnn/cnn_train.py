@@ -439,6 +439,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     program = os.path.basename(sys.argv[0])
 
-    print 'lexdim(%d), lexfilter(%d), layer2perm(%d)' % (args.lexdim, args.filtersize, args.layer2perm)
-    run_train(args.lexdim, args.filtersize, args.layer2perm)
+    print 'lexdim(%d), lexfilter(%d), layer2perm(%d)' % (int(args.lexdim), int(args.filtersize), int(args.layer2perm))
+    run_train(int(args.lexdim), int(args.filtersize), int(args.layer2perm))
 
