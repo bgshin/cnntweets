@@ -422,7 +422,7 @@ if __name__ == "__main__":
     print 'w2vdim(%d), lexdim(%d), lexfilter(%d)' % (args.w2vdim, args.lexdim, args.numfilters)
     sys.stdout.flush()
 
-    # run_train(args.w2vdim, args.lexdim, args.numfilters, sample_test=False)
-    run_train(args.w2vdim, args.lexdim, args.numfilters, sample_test=True)
+    run_train(args.w2vdim, args.lexdim, args.numfilters, sample_test=False)
+    # run_train(args.w2vdim, args.lexdim, args.numfilters, sample_test=True)
 
 
