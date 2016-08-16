@@ -7,7 +7,7 @@ import os
 import time
 import datetime
 import cnn_data_helpers
-from text_cnn import TextCNN
+from text_cnn import TextCNNAttentionSimple, TextCNNAttention
 
 from word2vecReader import Word2Vec
 import time
@@ -65,7 +65,7 @@ class Timer(object):
 
 def load_w2v(w2vdim, sample_test=True):
     if sample_test:
-        return {}
+        return {'a':np.array([np.float32(0.0)]*w2vdim)}
 
     else:
         model_path = '../data/emory_w2v/w2v-%d.bin' % w2vdim
@@ -228,7 +228,7 @@ def run_train(w2vdim, lexdim, lexnumfilters, sample_test = True):
         with sess.as_default():
             if not FLAGS.random_seed:
                 tf.set_random_seed(FLAGS.seed_number)
-            cnn = TextCNN(
+            cnn = TextCNNAttentionSimple(
                 sequence_length=x_train.shape[1],
                 num_classes=3,
                 embedding_size=w2vdim,
@@ -422,7 +422,7 @@ if __name__ == "__main__":
     print 'w2vdim(%d), lexdim(%d), lexfilter(%d)' % (args.w2vdim, args.lexdim, args.numfilters)
     sys.stdout.flush()
 
-    run_train(args.w2vdim, args.lexdim, args.numfilters, sample_test=False)
-    # run_train(args.lexdim, args.numfilters, sample_test=True)
+    # run_train(args.w2vdim, args.lexdim, args.numfilters, sample_test=False)
+    run_train(args.w2vdim, args.lexdim, args.numfilters, sample_test=True)
 
 
