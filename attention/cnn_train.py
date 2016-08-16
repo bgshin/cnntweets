@@ -7,7 +7,7 @@ import os
 import time
 import datetime
 import cnn_data_helpers
-from text_cnn import TextCNNAttentionSimple, TextCNNAttention
+from text_cnn import TextCNNAttentionSimple, TextCNNAttention, TextCNNAttentionSimpleUT
 
 from word2vecReader import Word2Vec
 import time
@@ -228,7 +228,7 @@ def run_train(w2vdim, lexdim, lexnumfilters, sample_test = True):
         with sess.as_default():
             if not FLAGS.random_seed:
                 tf.set_random_seed(FLAGS.seed_number)
-            cnn = TextCNNAttentionSimple(
+            cnn = TextCNNAttentionSimpleUT(
                 sequence_length=x_train.shape[1],
                 num_classes=3,
                 embedding_size=w2vdim,
