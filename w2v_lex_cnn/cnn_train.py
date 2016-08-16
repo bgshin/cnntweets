@@ -400,11 +400,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--w2vdim', default=200, type=int)
     parser.add_argument('--lexdim', default=14, type=int)
-    parser.add_argument('--filtersize', default=9, type=int)
+    parser.add_argument('--numfilters', default=9, type=int)
     args = parser.parse_args()
     program = os.path.basename(sys.argv[0])
 
-    print 'w2vdim(%d), lexdim(%d), lexfilter(%d)' % (args.lexdim, args.lexdim, args.filtersize)
-    run_train(args.w2vdim, args.lexdim, args.filtersize)
+    print 'w2vdim(%d), lexdim(%d), numfilters(%d)' % (args.lexdim, args.lexdim, args.numfilters)
+    run_train(args.w2vdim, args.lexdim, args.numfilters)
 
 
