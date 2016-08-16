@@ -19,7 +19,7 @@ import sys
 # ==================================================
 
 # Model Hyperparameters
-tf.flags.DEFINE_integer("embedding_dim", 400, "Dimensionality of character embedding (default: 128)")
+tf.flags.DEFINE_integer("embedding_dim", 200, "Dimensionality of character embedding (default: 128)")
 tf.flags.DEFINE_integer("embedding_dim_lex", 2, "Dimensionality of character embedding from LEXICON")
 tf.flags.DEFINE_integer("lex_filter_size", 2, "Dimensionality of character embedding from LEXICON")
 
@@ -41,6 +41,7 @@ tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on 
 #FIX RANDOM SEED
 tf.flags.DEFINE_boolean("random_seed", False, "Set to False to have same output everytime")
 tf.flags.DEFINE_integer("seed_number", 7, "Seed number to use when using same random seed")
+
 
 FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()
@@ -66,14 +67,17 @@ class Timer(object):
         print 'Elapsed: %s' % (time.time() - self.tstart)
 
 
-def load_w2v(w2vdim):
-    # return {}
-    model_path = '../data/emory_w2v/w2v-%d.bin' % w2vdim
-    with Timer("load w2v"):
-        model = Word2Vec.load_word2vec_format(model_path, binary=True)
-        print("The vocabulary size is: " + str(len(model.vocab)))
+def load_w2v(w2vdim, sample_test=True):
+    if sample_test:
+        return {}
 
-    return model
+    else:
+        model_path = '../data/emory_w2v/w2v-%d.bin' % w2vdim
+        with Timer("load w2v"):
+            model = Word2Vec.load_word2vec_format(model_path, binary=True)
+            print("The vocabulary size is: " + str(len(model.vocab)))
+
+        return model
 
 
 
@@ -173,21 +177,31 @@ def load_lexicon_unigram(lexdim):
 
     return norm_model, raw_model
 
-def run_train(w2vdim, lexdim, lexfiltersize):
+def run_train(w2vdim, lexdim, lexnumfilters, sample_test = True):
+    if sample_test == True:
+        print '======================================[sample test]======================================'
+
     max_len = 60
+
 
     with Timer("lex"):
         norm_model, raw_model = load_lexicon_unigram(lexdim)
 
     with Timer("w2v"):
-        w2vmodel = load_w2v(w2vdim)
+        w2vmodel = load_w2v(w2vdim, sample_test=sample_test)
 
     unigram_lexicon_model = norm_model
     # unigram_lexicon_model = raw_model
 
-    x_train, y_train, x_lex_train = cnn_data_helpers.load_data('trn',w2vmodel, unigram_lexicon_model, max_len)
-    x_dev, y_dev, x_lex_dev = cnn_data_helpers.load_data('dev', w2vmodel, unigram_lexicon_model, max_len)
-    x_test, y_test, x_lex_test  = cnn_data_helpers.load_data('tst', w2vmodel, unigram_lexicon_model, max_len)
+    if sample_test:
+        x_train, y_train, x_lex_train = cnn_data_helpers.load_data('trn_sample',w2vmodel, unigram_lexicon_model, max_len)
+        x_dev, y_dev, x_lex_dev = cnn_data_helpers.load_data('dev_sample', w2vmodel, unigram_lexicon_model, max_len)
+        x_test, y_test, x_lex_test  = cnn_data_helpers.load_data('tst_sample', w2vmodel, unigram_lexicon_model, max_len)
+
+    else:
+        x_train, y_train, x_lex_train = cnn_data_helpers.load_data('trn', w2vmodel, unigram_lexicon_model, max_len)
+        x_dev, y_dev, x_lex_dev = cnn_data_helpers.load_data('dev', w2vmodel, unigram_lexicon_model, max_len)
+        x_test, y_test, x_lex_test = cnn_data_helpers.load_data('tst', w2vmodel, unigram_lexicon_model, max_len)
 
 
     # x_train, y_train = cnn_data_helpers.load_data('trn',w2vmodel , max_len)
@@ -205,6 +219,7 @@ def run_train(w2vdim, lexdim, lexfiltersize):
     # ==================================================
     if not FLAGS.random_seed:
         tf.set_random_seed(FLAGS.seed_number)
+
     with tf.Graph().as_default():
         max_af1_dev = 0
         index_at_max_af1_dev = 0
@@ -222,7 +237,7 @@ def run_train(w2vdim, lexdim, lexfiltersize):
                 num_classes=3,
                 embedding_size=FLAGS.embedding_dim,
                 embedding_size_lex=lexdim,
-                lex_filter_size = lexfiltersize,
+                num_filters_lex = lexnumfilters,
                 filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
                 num_filters=FLAGS.num_filters,
                 l2_reg_lambda=FLAGS.l2_reg_lambda)
@@ -289,9 +304,9 @@ def run_train(w2vdim, lexdim, lexfiltersize):
                     cnn.input_x_lexicon: x_batch_lex,
                     cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
                 }
-                _, step, summaries, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1 = sess.run(
+                _, step, summaries, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1, hh, hhl = sess.run(
                     [train_op, global_step, train_summary_op, cnn.loss, cnn.accuracy,
-                     cnn.neg_r, cnn.neg_p, cnn.f1_neg, cnn.f1_pos, cnn.avg_f1],
+                     cnn.neg_r, cnn.neg_p, cnn.f1_neg, cnn.f1_pos, cnn.avg_f1, cnn.h_lex_list[0], cnn.h_list[0]],
                     feed_dict)
                 time_str = datetime.datetime.now().isoformat()
                 # print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
@@ -404,11 +419,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--w2vdim', default=200, type=int)
     parser.add_argument('--lexdim', default=14, type=int)
-    parser.add_argument('--filtersize', default=9, type=int)
+    parser.add_argument('--numfilters', default=9, type=int)
     args = parser.parse_args()
     program = os.path.basename(sys.argv[0])
 
-    print 'w2vdim(%d), lexdim(%d), lexfilter(%d)' % (args.lexdim, args.lexdim, args.filtersize)
-    run_train(args.w2vdim, args.lexdim, args.filtersize)
+    print 'w2vdim(%d), lexdim(%d), lexfilter(%d)' % (args.w2vdim, args.lexdim, args.numfilters)
+    sys.stdout.flush()
+
+    run_train(args.w2vdim, args.lexdim, args.numfilters, sample_test=False)
+    # run_train(args.lexdim, args.numfilters, sample_test=True)
 
 
