@@ -40,7 +40,6 @@ def load_data_and_labels(dataset):
     # pathtxt = template_txt % 'dev'
 
     x_text=[line.split('\t')[2] for line in open(pathtxt, "r").readlines()]
-    # x_text = [clean_str(sent) for sent in x_text]
     x_text = [s.split(" ") for s in x_text]
 
     y = []
@@ -114,9 +113,9 @@ def build_input_data_with_w2v(sentences, labels, w2vmodel, lexiconModel):
                 temp = np.array(np.float32(eachModel["<PAD/>"]))
             lexiconList = np.append(lexiconList, temp)
 
-        if len(lexiconList)>14:
+        if len(lexiconList)>15:
             print len(lexiconList)
-            print '======================over 14======================'
+            print '======================over 15======================'
         return lexiconList
 
     x = np.array([[get_index_of_voca(w2vmodel,word) for word in sentence] for sentence in sentences])
@@ -148,6 +147,7 @@ def batch_iter(data, batch_size, num_epochs, shuffle=True):
     data = np.array(data)
     data_size = len(data)
     num_batches_per_epoch = int(len(data)/batch_size) + 1
+    np.random.seed(3) #FIX RANDOM SEED
     for epoch in range(num_epochs):
         # Shuffle the data at each epoch
         if shuffle:

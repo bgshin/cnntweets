@@ -46,7 +46,7 @@ class TextCNN(object):
             # self.embedded_chars = tf.nn.embedding_lookup(W, self.input_x)
             self.embedded_chars = self.input_x
             self.embedded_chars_expanded = tf.expand_dims(self.embedded_chars, -1)
-            print self.embedded_chars_expanded
+            #print self.embedded_chars_expanded
 
             # lexicon embedding
             self.embedded_chars_lexicon = self.input_x_lexicon
