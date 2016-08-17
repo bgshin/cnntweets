@@ -11,8 +11,8 @@ import numpy as np
 import datetime
 from utils import cnn_data_helpers
 from utils.butils import Timer
-from models.w2v_lex_cnn import W2V_LEX_CNN
-from models.w2v_cnn import W2V_CNN
+from cnn_models.w2v_lex_cnn import W2V_LEX_CNN
+from cnn_models.w2v_cnn import W2V_CNN
 from utils.word2vecReader import Word2Vec
 import time
 import gc
