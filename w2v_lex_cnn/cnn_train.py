@@ -20,7 +20,6 @@ import sys
 
 # Model Hyperparameters
 tf.flags.DEFINE_string("filter_sizes", "2,3,4,5", "Comma-separated filter sizes (default: '3,4,5')")
-tf.flags.DEFINE_integer("num_filters", 256, "Number of filters per filter size (default: 128)")
 tf.flags.DEFINE_float("dropout_keep_prob", 0.8, "Dropout keep probability (default: 0.5)")
 tf.flags.DEFINE_float("l2_reg_lambda", 2.0, "L2 regularizaion lambda (default: 0.0)")
 
@@ -177,7 +176,7 @@ def load_lexicon_unigram(lexdim):
 
     return norm_model, raw_model
 
-def run_train(w2vdim, lexdim, lexfiltersize, randomseed):
+def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed):
     max_len = 60
 
     with Timer("lex"):
@@ -222,9 +221,9 @@ def run_train(w2vdim, lexdim, lexfiltersize, randomseed):
                 num_classes=3,
                 embedding_size=w2vdim,
                 embedding_size_lex=lexdim,
-                lex_filter_size = lexfiltersize,
+                lex_filter_size = lexnumfilters,
                 filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
-                num_filters=FLAGS.num_filters,
+                num_filters=w2vnumfilters,
                 l2_reg_lambda=FLAGS.l2_reg_lambda)
 
             # Define Training procedure
@@ -389,14 +388,15 @@ def run_train(w2vdim, lexdim, lexfiltersize, randomseed):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--w2vdim', default=200, type=int)
+    parser.add_argument('--w2vnumfilters', default=256, type=int)
     parser.add_argument('--lexdim', default=15, type=int)
-    parser.add_argument('--numfilters', default=9, type=int)
+    parser.add_argument('--lexnumfilters', default=9, type=int)
     parser.add_argument('--randomseed', default=7, type=int)
 
     args = parser.parse_args()
     program = os.path.basename(sys.argv[0])
 
-    print 'ADDITIONAL PARAMETER\n w2vdim: %d\n lexdim: %d\n numfilters: %d\n randomseed: %d\n' % (args.w2vdim, args.lexdim, args.numfilters, args.randomseed)
-    run_train(args.w2vdim, args.lexdim, args.numfilters, args.randomseed)
+    print 'ADDITIONAL PARAMETER\n w2vdim: %d\n w2vnumfilters: %d\n lexdim: %d\n lexnumfilters: %d\n randomseed: %d\n' % (args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed)
+    run_train(args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed)
 
 
