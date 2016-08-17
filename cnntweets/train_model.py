@@ -396,6 +396,7 @@ if __name__ == "__main__":
     program = os.path.basename(sys.argv[0])
 
     print 'ADDITIONAL PARAMETER\n w2vdim: %d\n w2vnumfilters: %d\n lexdim: %d\n lexnumfilters: %d\n randomseed: %d\n' % (args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed)
-    run_train(args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, simple_run=True)
+    run_train(args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, simple_run=False)
+    # run_train(args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, simple_run=True)
 
 
