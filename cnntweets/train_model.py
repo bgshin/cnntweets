@@ -1,15 +1,14 @@
 #! /usr/bin/env python
 import argparse
-
 import tensorflow as tf
 import numpy as np
 import os
-import time
 import datetime
-import cnn_data_helpers
-from text_cnn import TextCNNAttentionSimple, TextCNNAttention, TextCNNAttentionSimpleUT
-
-from word2vecReader import Word2Vec
+from utils import cnn_data_helpers
+from utils.butils import Timer
+from models.w2v_lex_cnn import W2V_LEX_CNN
+from models.w2v_cnn import W2V_CNN
+from utils.word2vecReader import Word2Vec
 import time
 import gc
 import re
@@ -20,23 +19,18 @@ import sys
 
 # Model Hyperparameters
 tf.flags.DEFINE_string("filter_sizes", "2,3,4,5", "Comma-separated filter sizes (default: '3,4,5')")
-tf.flags.DEFINE_integer("num_filters", 256, "Number of filters per filter size (default: 128)")
 tf.flags.DEFINE_float("dropout_keep_prob", 0.8, "Dropout keep probability (default: 0.5)")
 tf.flags.DEFINE_float("l2_reg_lambda", 2.0, "L2 regularizaion lambda (default: 0.0)")
 
 # Training parameters
 tf.flags.DEFINE_integer("batch_size", 64, "Batch Size (default: 64)")
-tf.flags.DEFINE_integer("num_epochs", 50, "Number of training epochs (default: 200)")
+tf.flags.DEFINE_integer("num_epochs", 30, "Number of training epochs (default: 200)")
 tf.flags.DEFINE_integer("evaluate_every", 100, "Evaluate model on dev set after this many steps (default: 100)")
 tf.flags.DEFINE_integer("test_every", 100000, "Evaluate model on test set after this many steps (default: 100)")
 tf.flags.DEFINE_integer("checkpoint_every", 10000, "Save model after this many steps (default: 100)")
 # Misc Parameters
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
 tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
-
-#FIX RANDOM SEED
-tf.flags.DEFINE_boolean("random_seed", False, "Set to False to have same output everytime")
-tf.flags.DEFINE_integer("seed_number", 7, "Seed number to use when using same random seed")
 
 
 FLAGS = tf.flags.FLAGS
@@ -48,30 +42,14 @@ print("")
 
 
 
-
-class Timer(object):
-    def __init__(self, name=None):
-        self.name = name
-
-    def __enter__(self):
-        self.tstart = time.time()
-
-    def __exit__(self, type, value, traceback):
-
-        if self.name:
-            print '[%s]' % self.name,
-        print 'Elapsed: %s' % (time.time() - self.tstart)
-
-
-def load_w2v(w2vdim, sample_test=True):
-    if sample_test:
+def load_w2v(w2vdim, simple_run = True):
+    if simple_run:
         return {'a': np.array([np.float32(0.0)] * w2vdim)}
 
     else:
         model_path = '../data/emory_w2v/w2v-%d.bin' % w2vdim
-        with Timer("load w2v"):
-            model = Word2Vec.load_word2vec_format(model_path, binary=True)
-            print("The vocabulary size is: " + str(len(model.vocab)))
+        model = Word2Vec.load_word2vec_format(model_path, binary=True)
+        print("The vocabulary size is: " + str(len(model.vocab)))
 
         return model
 
@@ -94,6 +72,14 @@ def load_lexicon_unigram(lexdim):
         default_vector_dic = {'EverythingUnigramsPMIHS.txt': [0],
                               'unigrams-pmilexicon.txt': [0, 0, 0]}
 
+    elif lexdim == 15:
+        default_vector_dic = {'EverythingUnigramsPMIHS.txt':[0],
+                          'HS-AFFLEX-NEGLEX-unigrams.txt':[0,0,0],
+                          'Maxdiff-Twitter-Lexicon_0to1.txt':[0.5],
+                          'S140-AFFLEX-NEGLEX-unigrams.txt':[0,0,0],
+                          'unigrams-pmilexicon.txt':[0,0,0],
+                          'unigrams-pmilexicon_sentiment_140.txt':[0,0,0],
+                          'BL.txt': [0]}
     else:
         default_vector_dic = {'EverythingUnigramsPMIHS.txt':[0],
                           'HS-AFFLEX-NEGLEX-unigrams.txt':[0,0,0],
@@ -145,7 +131,10 @@ def load_lexicon_unigram(lexdim):
                         if idx == 0:
                             key = tk
                         else:
-                            data_vec.append(float(tk))
+                            try:
+                                data_vec.append(float(tk))
+                            except:
+                                pass
 
 
                 assert(key != '')
@@ -156,12 +145,13 @@ def load_lexicon_unigram(lexdim):
         values = np.array(raw_model[index].values())
         new_val = np.copy(values)
 
-        print 'model %d' % index
+
+        #print 'model %d' % index
         for i in range(len(raw_model[index].values()[0])):
             pos = np.max(values, axis=0)[i]
             neg = np.min(values, axis=0)[i]
             mmax = max(abs(pos), abs(neg))
-            print pos, neg, mmax
+            #print pos, neg, mmax
 
             new_val[:, i] = values[:, i] / mmax
 
@@ -173,26 +163,27 @@ def load_lexicon_unigram(lexdim):
 
     return norm_model, raw_model
 
-def run_train(w2vdim, lexdim, lexnumfilters, sample_test = True):
-    if sample_test == True:
-        print '======================================[sample test]======================================'
+def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, simple_run = True):
+    if simple_run == True:
+        print '======================================[simple_run]======================================'
+
 
     max_len = 60
-
 
     with Timer("lex"):
         norm_model, raw_model = load_lexicon_unigram(lexdim)
 
     with Timer("w2v"):
-        w2vmodel = load_w2v(w2vdim, sample_test=sample_test)
+        w2vmodel = load_w2v(w2vdim, simple_run=simple_run)
 
     unigram_lexicon_model = norm_model
     # unigram_lexicon_model = raw_model
 
-    if sample_test:
-        x_train, y_train, x_lex_train = cnn_data_helpers.load_data('trn_sample',w2vmodel, unigram_lexicon_model, max_len)
+    if simple_run:
+        x_train, y_train, x_lex_train = cnn_data_helpers.load_data('trn_sample', w2vmodel, unigram_lexicon_model,
+                                                                   max_len)
         x_dev, y_dev, x_lex_dev = cnn_data_helpers.load_data('dev_sample', w2vmodel, unigram_lexicon_model, max_len)
-        x_test, y_test, x_lex_test  = cnn_data_helpers.load_data('tst_sample', w2vmodel, unigram_lexicon_model, max_len)
+        x_test, y_test, x_lex_test = cnn_data_helpers.load_data('tst_sample', w2vmodel, unigram_lexicon_model, max_len)
 
     else:
         x_train, y_train, x_lex_train = cnn_data_helpers.load_data('trn', w2vmodel, unigram_lexicon_model, max_len)
@@ -200,9 +191,6 @@ def run_train(w2vdim, lexdim, lexnumfilters, sample_test = True):
         x_test, y_test, x_lex_test = cnn_data_helpers.load_data('tst', w2vmodel, unigram_lexicon_model, max_len)
 
 
-    # x_train, y_train = cnn_data_helpers.load_data('trn',w2vmodel , max_len)
-    # x_dev, y_dev = cnn_data_helpers.load_data('dev', w2vmodel, max_len)
-    # x_test, y_test  = cnn_data_helpers.load_data('tst', w2vmodel, max_len)
     del(w2vmodel)
     del(norm_model)
     del(raw_model)
@@ -213,9 +201,8 @@ def run_train(w2vdim, lexdim, lexnumfilters, sample_test = True):
 
     # Training
     # ==================================================
-    if not FLAGS.random_seed:
-        tf.set_random_seed(FLAGS.seed_number)
-
+    if randomseed > 0:
+        tf.set_random_seed(randomseed)
     with tf.Graph().as_default():
         max_af1_dev = 0
         index_at_max_af1_dev = 0
@@ -226,16 +213,16 @@ def run_train(w2vdim, lexdim, lexnumfilters, sample_test = True):
           log_device_placement=FLAGS.log_device_placement)
         sess = tf.Session(config=session_conf)
         with sess.as_default():
-            if not FLAGS.random_seed:
-                tf.set_random_seed(FLAGS.seed_number)
-            cnn = TextCNNAttentionSimpleUT(
+            if randomseed > 0:
+                tf.set_random_seed(randomseed)
+            cnn = W2V_LEX_CNN(
                 sequence_length=x_train.shape[1],
                 num_classes=3,
                 embedding_size=w2vdim,
                 embedding_size_lex=lexdim,
                 num_filters_lex = lexnumfilters,
                 filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
-                num_filters=FLAGS.num_filters,
+                num_filters=w2vnumfilters,
                 l2_reg_lambda=FLAGS.l2_reg_lambda)
 
             # Define Training procedure
@@ -300,14 +287,14 @@ def run_train(w2vdim, lexdim, lexnumfilters, sample_test = True):
                     cnn.input_x_lexicon: x_batch_lex,
                     cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
                 }
-                _, step, summaries, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1, hh, hhl = sess.run(
+                _, step, summaries, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1 = sess.run(
                     [train_op, global_step, train_summary_op, cnn.loss, cnn.accuracy,
-                     cnn.neg_r, cnn.neg_p, cnn.f1_neg, cnn.f1_pos, cnn.avg_f1, cnn.h_lex_list[0], cnn.h_list[0]],
+                     cnn.neg_r, cnn.neg_p, cnn.f1_neg, cnn.f1_pos, cnn.avg_f1],
                     feed_dict)
                 time_str = datetime.datetime.now().isoformat()
                 # print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
-                print("{}: step {}, loss {:g}, acc {:g}, neg_r {:g} neg_p {:g} f1_neg {:g}, f1_pos {:g}, f1 {:g}".
-                      format(time_str, step, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1))
+                #print("{}: step {}, loss {:g}, acc {:g}, neg_r {:g} neg_p {:g} f1_neg {:g}, f1_pos {:g}, f1 {:g}".
+                #      format(time_str, step, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1))
                 train_summary_writer.add_summary(summaries, step)
 
             def dev_step(x_batch, y_batch, x_batch_lex, writer=None):
@@ -326,17 +313,12 @@ def run_train(w2vdim, lexdim, lexnumfilters, sample_test = True):
                      cnn.neg_r, cnn.neg_p, cnn.f1_neg, cnn.f1_pos, cnn.avg_f1],
                     feed_dict)
                 time_str = datetime.datetime.now().isoformat()
-                print("{}: step {}, loss {:g}, acc {:g}, neg_r {:g} neg_p {:g} f1_neg {:g}, f1_pos {:g}, f1 {:g}".
-                      format(time_str, step, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1))
+                print("{} : {} step {}, loss {:g}, acc {:g}, neg_r {:g} neg_p {:g} f1_neg {:g}, f1_pos {:g}, f1 {:g}".
+                      format("DEV", time_str, step, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1))
                 if writer:
                     writer.add_summary(summaries, step)
 
                 return avg_f1
-                # if avg_f1>56:
-                #     return True
-                #
-                # else:
-                #     return False
 
             def test_step(x_batch, y_batch, x_batch_lex, writer=None):
                 """
@@ -354,16 +336,10 @@ def run_train(w2vdim, lexdim, lexnumfilters, sample_test = True):
                      cnn.neg_r, cnn.neg_p, cnn.f1_neg, cnn.f1_pos, cnn.avg_f1],
                     feed_dict)
                 time_str = datetime.datetime.now().isoformat()
-                print("{}: step {}, loss {:g}, acc {:g}, neg_r {:g} neg_p {:g} f1_neg {:g}, f1_pos {:g}, f1 {:g}".
-                      format(time_str, step, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1))
+                print("{} : {} step {}, loss {:g}, acc {:g}, neg_r {:g} neg_p {:g} f1_neg {:g}, f1_pos {:g}, f1 {:g}".
+                      format("TEST", time_str, step, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1))
                 if writer:
                     writer.add_summary(summaries, step)
-
-                # if avg_f1 > 56:
-                #     return True
-                #
-                # else:
-                #     return False
 
                 return avg_f1
 
@@ -376,24 +352,21 @@ def run_train(w2vdim, lexdim, lexnumfilters, sample_test = True):
                 train_step(x_batch, y_batch, x_batch_lex)
                 current_step = tf.train.global_step(sess, global_step)
                 if current_step % FLAGS.evaluate_every == 0:
-                    print("\nEvaluation:")
+                    print("Evaluation:")
                     curr_af1_dev = dev_step(x_dev, y_dev, x_lex_dev, writer=dev_summary_writer)
                         # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
                         # print("Saved model checkpoint to {}\n".format(path))
-                    print("")
 
-                    print("\nTest:")
                     curr_af1_tst = test_step(x_test, y_test, x_lex_test, writer=test_summary_writer)
                         # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
                         # print("Saved model checkpoint to {}\n".format(path))
-                    print("")
 
                     if curr_af1_dev > max_af1_dev:
                         max_af1_dev = curr_af1_dev
                         index_at_max_af1_dev = current_step
                         af1_tst_at_max_af1_dev = curr_af1_tst
 
-                    print '\nStatus:\n[%d] Max f1 for dev (%f), Max f1 for tst (%f)\n' % (
+                    print 'Status: [%d] Max f1 for dev (%f), Max f1 for tst (%f)\n' % (
                         index_at_max_af1_dev, max_af1_dev, af1_tst_at_max_af1_dev)
                     sys.stdout.flush()
 
@@ -414,15 +387,15 @@ def run_train(w2vdim, lexdim, lexnumfilters, sample_test = True):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--w2vdim', default=200, type=int)
-    parser.add_argument('--lexdim', default=14, type=int)
-    parser.add_argument('--numfilters', default=9, type=int)
+    parser.add_argument('--w2vnumfilters', default=256, type=int)
+    parser.add_argument('--lexdim', default=15, type=int)
+    parser.add_argument('--lexnumfilters', default=9, type=int)
+    parser.add_argument('--randomseed', default=7, type=int)
+
     args = parser.parse_args()
     program = os.path.basename(sys.argv[0])
 
-    print 'w2vdim(%d), lexdim(%d), lexfilter(%d)' % (args.w2vdim, args.lexdim, args.numfilters)
-    sys.stdout.flush()
-
-    run_train(args.w2vdim, args.lexdim, args.numfilters, sample_test=False)
-    # run_train(args.w2vdim, args.lexdim, args.numfilters, sample_test=True)
+    print 'ADDITIONAL PARAMETER\n w2vdim: %d\n w2vnumfilters: %d\n lexdim: %d\n lexnumfilters: %d\n randomseed: %d\n' % (args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed)
+    run_train(args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, simple_run=True)
 
 

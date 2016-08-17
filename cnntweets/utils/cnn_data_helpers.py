@@ -114,7 +114,7 @@ def build_input_data_with_w2v(sentences, labels, w2vmodel, lexiconModel):
                 temp = np.array(np.float32(eachModel["<PAD/>"]))
             lexiconList = np.append(lexiconList, temp)
 
-        if len(lexiconList)>15:
+        if len(lexiconList) > 15:
             print len(lexiconList)
             print '======================over 15======================'
         return lexiconList
