@@ -1,9 +1,5 @@
 #! /usr/bin/env python
 import os
-os.environ["PYTHONPATH"] = "."
-print os.environ['PYTHONPATH']
-
-
 import argparse
 import tensorflow as tf
 import numpy as np
