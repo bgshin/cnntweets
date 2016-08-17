@@ -385,6 +385,8 @@ def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, simple_r
 
 
 if __name__ == "__main__":
+    os.environ["PYTHONPATH"] = "."
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--w2vdim', default=200, type=int)
     parser.add_argument('--w2vnumfilters', default=256, type=int)
