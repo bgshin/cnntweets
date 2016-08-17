@@ -1,8 +1,14 @@
 #! /usr/bin/env python
+import os
+print os.environ['PYTHONPATH']
+os.environ["PYTHONPATH"] = "."
+print os.environ['PYTHONPATH']
+
+
 import argparse
 import tensorflow as tf
 import numpy as np
-import os
+
 import datetime
 from utils import cnn_data_helpers
 from utils.butils import Timer
@@ -385,9 +391,6 @@ def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, simple_r
 
 
 if __name__ == "__main__":
-    print os.environ['PYTHONPATH']
-    os.environ["PYTHONPATH"] = "."
-    print os.environ['PYTHONPATH']
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--w2vdim', default=200, type=int)
