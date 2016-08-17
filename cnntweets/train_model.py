@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 import os
-print os.environ['PYTHONPATH']
 os.environ["PYTHONPATH"] = "."
 print os.environ['PYTHONPATH']
 
