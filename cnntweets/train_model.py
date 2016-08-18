@@ -87,7 +87,8 @@ def load_lexicon_unigram(lexdim):
                           'Maxdiff-Twitter-Lexicon_0to1.txt':[0.5],
                           'S140-AFFLEX-NEGLEX-unigrams.txt':[0,0,0],
                           'unigrams-pmilexicon.txt':[0,0,0],
-                          'unigrams-pmilexicon_sentiment_140.txt':[0,0,0]}
+                          'unigrams-pmilexicon_sentiment_140.txt':[0,0,0],
+                          'BL.txt': [0]}
 
     file_path = ["../data/lexicon_data/"+files for files in os.listdir("../data/lexicon_data") if files.endswith(".txt")]
     if lexdim == 2 or lexdim == 4:
