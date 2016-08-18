@@ -176,7 +176,7 @@ def load_lexicon_unigram(lexdim):
 
     return norm_model, raw_model
 
-def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed):
+def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, withlexicon):
     max_len = 60
 
     with Timer("lex"):
@@ -224,6 +224,7 @@ def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed):
                 lex_filter_size = lexnumfilters,
                 filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
                 num_filters=w2vnumfilters,
+                with_lexicon=withlexicon,
                 l2_reg_lambda=FLAGS.l2_reg_lambda)
 
             # Define Training procedure
@@ -392,11 +393,12 @@ if __name__ == "__main__":
     parser.add_argument('--lexdim', default=15, type=int)
     parser.add_argument('--lexnumfilters', default=9, type=int)
     parser.add_argument('--randomseed', default=7, type=int)
+    parser.add_argument('--withlexicon', default=1, type=int)
 
     args = parser.parse_args()
     program = os.path.basename(sys.argv[0])
 
-    print 'ADDITIONAL PARAMETER\n w2vdim: %d\n w2vnumfilters: %d\n lexdim: %d\n lexnumfilters: %d\n randomseed: %d\n' % (args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed)
-    run_train(args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed)
+    print 'ADDITIONAL PARAMETER\n w2vdim: %d\n w2vnumfilters: %d\n lexdim: %d\n lexnumfilters: %d\n randomseed: %d\n withlexicon: %d\n' % (args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, args.withlexicon)
+    run_train(args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, args.withlexicon)
 
 

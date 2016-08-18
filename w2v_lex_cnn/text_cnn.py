@@ -9,20 +9,7 @@ class TextCNN(object):
     """
     def __init__(
       self, sequence_length, num_classes,
-      embedding_size, filter_sizes, num_filters, embedding_size_lex, lex_filter_size, l2_reg_lambda=0.0):
-        # if embedding_size_lex == 6:
-        #     num_filters_lex = 4
-        # elif embedding_size_lex == 14:
-        #     num_filters_lex = 9
-        #
-        # elif embedding_size_lex == 2:
-        #     num_filters_lex = 2
-        #
-        # elif embedding_size_lex == 4:
-        #     num_filters_lex = 3
-        #
-        # else:
-        #     num_filters_lex = 256
+      embedding_size, filter_sizes, num_filters, embedding_size_lex, lex_filter_size, with_lexicon, l2_reg_lambda=0.0):
         num_filters_lex = lex_filter_size
 
 
@@ -33,22 +20,22 @@ class TextCNN(object):
 
         # lexicon input
         self.input_x_lexicon = tf.placeholder(tf.float32, [None, sequence_length, embedding_size_lex],
-                                              name="input_x_lexicon")
+                                                  name="input_x_lexicon")
 
         # Keeping track of l2 regularization loss (optional)
         l2_loss = tf.constant(0.0)
-
+        
         # Embedding layer
         with tf.device('/cpu:0'), tf.name_scope("embedding"):
+            tf.set_random_seed(7) # random seed
+
             # W = tf.Variable(
             #     tf.random_uniform([vocab_size, embedding_size], -1.0, 1.0),
             #     name="W")
             # self.embedded_chars = tf.nn.embedding_lookup(W, self.input_x)
             self.embedded_chars = self.input_x
             self.embedded_chars_expanded = tf.expand_dims(self.embedded_chars, -1)
-            #print self.embedded_chars_expanded
-
-            # lexicon embedding
+            tf.set_random_seed(7) # random seed
             self.embedded_chars_lexicon = self.input_x_lexicon
             self.embedded_chars_expanded_lexicon = tf.expand_dims(self.embedded_chars_lexicon, -1)
 
@@ -82,35 +69,39 @@ class TextCNN(object):
                 pooled_outputs.append(pooled)
 
         # APPLY CNN TO LEXICON EMBEDDING
-        for i, filter_size in enumerate(filter_sizes):
-            with tf.name_scope("lexicon-conv-maxpool-%s" % filter_size):
-                # Convolution Layer
+        if with_lexicon == 1:
+            for i, filter_size in enumerate(filter_sizes):
+                with tf.name_scope("lexicon-conv-maxpool-%s" % filter_size):
+                    # Convolution Layer
 
-                filter_shape = [filter_size, embedding_size_lex, 1, num_filters_lex]
-                W = tf.Variable(tf.truncated_normal(filter_shape, stddev=0.1), name="W")
-                b = tf.Variable(tf.constant(0.1, shape=[num_filters_lex]), name="b")
+                    filter_shape = [filter_size, embedding_size_lex, 1, num_filters_lex]
+                    W = tf.Variable(tf.truncated_normal(filter_shape, stddev=0.1), name="W")
+                    b = tf.Variable(tf.constant(0.1, shape=[num_filters_lex]), name="b")
 
-                conv = tf.nn.conv2d(
-                    self.embedded_chars_expanded_lexicon,
-                    W,
-                    strides=[1, 1, 1, 1],
-                    padding="VALID",
-                    name="conv")
-                # Apply nonlinearity
-                h = tf.nn.relu(tf.nn.bias_add(conv, b), name="relu")
-                # Maxpooling over the outputs
-                pooled = tf.nn.max_pool(
-                    h,
-                    ksize=[1, sequence_length - filter_size + 1, 1, 1],
-                    strides=[1, 1, 1, 1],
-                    padding='VALID',
-                    name="pool")
-                pooled_outputs.append(pooled)
+                    conv = tf.nn.conv2d(
+                        self.embedded_chars_expanded_lexicon,
+                        W,
+                        strides=[1, 1, 1, 1],
+                        padding="VALID",
+                        name="conv")
+                    # Apply nonlinearity
+                    h = tf.nn.relu(tf.nn.bias_add(conv, b), name="relu")
+                    # Maxpooling over the outputs
+                    pooled = tf.nn.max_pool(
+                        h,
+                        ksize=[1, sequence_length - filter_size + 1, 1, 1],
+                        strides=[1, 1, 1, 1],
+                        padding='VALID',
+                        name="pool")
+                    pooled_outputs.append(pooled)
 
 
 
         # Combine all the pooled features
-        num_filters_total = num_filters * len(filter_sizes) + num_filters_lex * len(filter_sizes)
+        if with_lexicon == 1:
+            num_filters_total = num_filters * len(filter_sizes) + num_filters_lex * len(filter_sizes)
+        else:
+            num_filters_total = num_filters * len(filter_sizes)
         self.h_pool = tf.concat(3, pooled_outputs)
         self.h_pool_flat = tf.reshape(self.h_pool, [-1, num_filters_total])
 

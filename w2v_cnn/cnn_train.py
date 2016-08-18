@@ -220,12 +220,6 @@ with tf.Graph().as_default():
                 writer.add_summary(summaries, step)
 
             return avg_f1
-            #
-            # if avg_f1 > 56:
-            #     return True
-            #
-            # else:
-            #     return False
 
         # Generate batches
         batches = cnn_data_helpers.batch_iter(
@@ -253,13 +247,3 @@ with tf.Graph().as_default():
                 index_at_max_af1_dev, max_af1_dev, af1_tst_at_max_af1_dev)
                 sys.stdout.flush()
 
-            # if current_step % FLAGS.test_every == 0:
-            #     print("\nTest:")
-            #     if test_step(x_test, y_test, writer=test_summary_writer) is True:
-            #         path = saver.save(sess, checkpoint_prefix, global_step=current_step)
-            #         print("Saved model checkpoint to {}\n".format(path))
-            #     print("")
-
-            # if current_step % FLAGS.checkpoint_every == 0:
-            #     path = saver.save(sess, checkpoint_prefix, global_step=current_step)
-            #     print("Saved model checkpoint to {}\n".format(path))

@@ -4,28 +4,6 @@ import itertools
 from collections import Counter
 
 
-
-def clean_str(string):
-    """
-    Tokenization/string cleaning for all datasets except for SST.
-    Original taken from https://github.com/yoonkim/CNN_sentence/blob/master/process_data.py
-    """
-    string = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", string)
-    string = re.sub(r"\'s", " \'s", string)
-    string = re.sub(r"\'ve", " \'ve", string)
-    string = re.sub(r"n\'t", " n\'t", string)
-    string = re.sub(r"\'re", " \'re", string)
-    string = re.sub(r"\'d", " \'d", string)
-    string = re.sub(r"\'ll", " \'ll", string)
-    string = re.sub(r",", " , ", string)
-    string = re.sub(r"!", " ! ", string)
-    string = re.sub(r"\(", " \( ", string)
-    string = re.sub(r"\)", " \) ", string)
-    string = re.sub(r"\?", " \? ", string)
-    string = re.sub(r"\s{2,}", " ", string)
-    return string.strip().lower()
-
-
 def load_data_and_labels(dataset):
     """
     Loads MR polarity data from files, splits the data into words and generates labels.
@@ -35,12 +13,8 @@ def load_data_and_labels(dataset):
 
 
     pathtxt = template_txt % dataset
-    # pathtxt = template_txt % 'tst'
-    # pathtxt = template_txt % 'trn'
-    # pathtxt = template_txt % 'dev'
 
     x_text=[line.split('\t')[2] for line in open(pathtxt, "r").readlines()]
-    x_text = [clean_str(sent) for sent in x_text]
     x_text = [s.split(" ") for s in x_text]
 
     y = []
