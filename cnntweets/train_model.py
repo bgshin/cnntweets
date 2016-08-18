@@ -165,7 +165,7 @@ def load_lexicon_unigram(lexdim):
 
     return norm_model, raw_model
 
-def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, simple_run = True):
+def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, withlexicon, simple_run = True):
     if simple_run == True:
         print '======================================[simple_run]======================================'
 
@@ -217,15 +217,26 @@ def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, simple_r
         with sess.as_default():
             if randomseed > 0:
                 tf.set_random_seed(randomseed)
-            cnn = W2V_LEX_CNN(
-                sequence_length=x_train.shape[1],
-                num_classes=3,
-                embedding_size=w2vdim,
-                embedding_size_lex=lexdim,
-                num_filters_lex = lexnumfilters,
-                filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
-                num_filters=w2vnumfilters,
-                l2_reg_lambda=FLAGS.l2_reg_lambda)
+            
+            if withlexicon == 1:    
+                cnn = W2V_LEX_CNN(
+                    sequence_length=x_train.shape[1],
+                    num_classes=3,
+                    embedding_size=w2vdim,
+                    embedding_size_lex=lexdim,
+                    num_filters_lex = lexnumfilters,
+                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
+                    num_filters=w2vnumfilters,
+                    l2_reg_lambda=FLAGS.l2_reg_lambda)
+            else:
+                cnn = W2V_CNN(
+                    sequence_length=x_train.shape[1],
+                    num_classes=3,
+                    embedding_size=w2vdim,
+                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
+                    num_filters=w2vnumfilters,
+                    l2_reg_lambda=FLAGS.l2_reg_lambda
+                    )
 
             # Define Training procedure
             global_step = tf.Variable(0, name="global_step", trainable=False)
@@ -278,17 +289,24 @@ def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, simple_r
             # Initialize all variables
             sess.run(tf.initialize_all_variables())
 
-            def train_step(x_batch, y_batch, x_batch_lex):
+            def train_step(x_batch, y_batch, x_batch_lex=None):
                 """
                 A single training step
                 """
-                feed_dict = {
-                    cnn.input_x: x_batch,
-                    cnn.input_y: y_batch,
-                    # lexicon
-                    cnn.input_x_lexicon: x_batch_lex,
-                    cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
-                }
+                if x_batch_lex != None:
+                    feed_dict = {
+                        cnn.input_x: x_batch,
+                        cnn.input_y: y_batch,
+                        # lexicon
+                        cnn.input_x_lexicon: x_batch_lex,
+                        cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
+                    }
+                else: 
+                    feed_dict = {
+                        cnn.input_x: x_batch,
+                        cnn.input_y: y_batch,
+                        cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
+                    }
                 _, step, summaries, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1 = sess.run(
                     [train_op, global_step, train_summary_op, cnn.loss, cnn.accuracy,
                      cnn.neg_r, cnn.neg_p, cnn.f1_neg, cnn.f1_pos, cnn.avg_f1],
@@ -299,17 +317,24 @@ def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, simple_r
                 #      format(time_str, step, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1))
                 train_summary_writer.add_summary(summaries, step)
 
-            def dev_step(x_batch, y_batch, x_batch_lex, writer=None):
+            def dev_step(x_batch, y_batch, x_batch_lex=None, writer=None):
                 """
                 Evaluates model on a dev set
                 """
-                feed_dict = {
-                    cnn.input_x: x_batch,
-                    cnn.input_y: y_batch,
-                    # lexicon
-                    cnn.input_x_lexicon: x_batch_lex,
-                    cnn.dropout_keep_prob: 1.0
-                }
+                if x_batch_lex != None:
+                    feed_dict = {
+                        cnn.input_x: x_batch,
+                        cnn.input_y: y_batch,
+                        # lexicon
+                        cnn.input_x_lexicon: x_batch_lex,
+                        cnn.dropout_keep_prob: 1.0
+                    }
+                else: 
+                    feed_dict = {
+                        cnn.input_x: x_batch,
+                        cnn.input_y: y_batch,
+                        cnn.dropout_keep_prob: 1.0
+                    }
                 step, summaries, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1 = sess.run(
                     [global_step, dev_summary_op, cnn.loss, cnn.accuracy,
                      cnn.neg_r, cnn.neg_p, cnn.f1_neg, cnn.f1_pos, cnn.avg_f1],
@@ -322,17 +347,24 @@ def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, simple_r
 
                 return avg_f1
 
-            def test_step(x_batch, y_batch, x_batch_lex, writer=None):
+            def test_step(x_batch, y_batch, x_batch_lex=None, writer=None):
                 """
                 Evaluates model on a test set
                 """
-                feed_dict = {
-                    cnn.input_x: x_batch,
-                    cnn.input_y: y_batch,
-                    # lexicon
-                    cnn.input_x_lexicon: x_batch_lex,
-                    cnn.dropout_keep_prob: 1.0
-                }
+                if x_batch_lex != None:
+                    feed_dict = {
+                        cnn.input_x: x_batch,
+                        cnn.input_y: y_batch,
+                        # lexicon
+                        cnn.input_x_lexicon: x_batch_lex,
+                        cnn.dropout_keep_prob: 1.0
+                    }
+                else: 
+                    feed_dict = {
+                        cnn.input_x: x_batch,
+                        cnn.input_y: y_batch,
+                        cnn.dropout_keep_prob: 1.0
+                    }
                 step, summaries, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1 = sess.run(
                     [global_step, dev_summary_op, cnn.loss, cnn.accuracy,
                      cnn.neg_r, cnn.neg_p, cnn.f1_neg, cnn.f1_pos, cnn.avg_f1],
@@ -351,17 +383,32 @@ def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, simple_r
             # Training loop. For each batch...
             for batch in batches:
                 x_batch, y_batch, x_batch_lex = zip(*batch)
-                train_step(x_batch, y_batch, x_batch_lex)
+
+                if withlexicon == 1:
+                    train_step(x_batch, y_batch, x_batch_lex)
+                else:
+                    train_step(x_batch, y_batch)
+
                 current_step = tf.train.global_step(sess, global_step)
                 if current_step % FLAGS.evaluate_every == 0:
                     print("Evaluation:")
-                    curr_af1_dev = dev_step(x_dev, y_dev, x_lex_dev, writer=dev_summary_writer)
-                        # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
-                        # print("Saved model checkpoint to {}\n".format(path))
 
-                    curr_af1_tst = test_step(x_test, y_test, x_lex_test, writer=test_summary_writer)
-                        # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
-                        # print("Saved model checkpoint to {}\n".format(path))
+                    if withlexicon == 1:
+                        curr_af1_dev = dev_step(x_dev, y_dev, x_lex_dev, writer=dev_summary_writer)
+                            # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
+                            # print("Saved model checkpoint to {}\n".format(path))
+
+                        curr_af1_tst = test_step(x_test, y_test, x_lex_test, writer=test_summary_writer)
+                            # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
+                            # print("Saved model checkpoint to {}\n".format(path))
+                    else:
+                        curr_af1_dev = dev_step(x_dev, y_dev, writer=dev_summary_writer)
+                            # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
+                            # print("Saved model checkpoint to {}\n".format(path))
+
+                        curr_af1_tst = test_step(x_test, y_test, writer=test_summary_writer)
+                            # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
+                            # print("Saved model checkpoint to {}\n".format(path))                        
 
                     if curr_af1_dev > max_af1_dev:
                         max_af1_dev = curr_af1_dev
@@ -389,17 +436,18 @@ def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, simple_r
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--w2vdim', default=200, type=int)
+    parser.add_argument('--w2vdim', default=400, type=int)
     parser.add_argument('--w2vnumfilters', default=256, type=int)
     parser.add_argument('--lexdim', default=15, type=int)
     parser.add_argument('--lexnumfilters', default=9, type=int)
     parser.add_argument('--randomseed', default=7, type=int)
+    parser.add_argument('--withlexicon', default=0, type=int)
 
     args = parser.parse_args()
     program = os.path.basename(sys.argv[0])
 
-    print 'ADDITIONAL PARAMETER\n w2vdim: %d\n w2vnumfilters: %d\n lexdim: %d\n lexnumfilters: %d\n randomseed: %d\n' % (args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed)
-    run_train(args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, simple_run=False)
+    print 'ADDITIONAL PARAMETER\n w2vdim: %d\n w2vnumfilters: %d\n lexdim: %d\n lexnumfilters: %d\n randomseed: %d\n withlexicon: %d\n' % (args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, args.withlexicon)
+    run_train(args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, args.withlexicon, simple_run=False)
     # run_train(args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, simple_run=True)
 
 
