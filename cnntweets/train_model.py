@@ -9,6 +9,7 @@ from utils import cnn_data_helpers
 from utils.butils import Timer
 from cnn_models.w2v_lex_cnn import W2V_LEX_CNN
 from cnn_models.w2v_cnn import W2V_CNN
+from cnn_models.attention_cnn import TextCNNAttention
 from utils.word2vecReader import Word2Vec
 import time
 import gc
@@ -165,7 +166,7 @@ def load_lexicon_unigram(lexdim):
 
     return norm_model, raw_model
 
-def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, withlexicon, simple_run = True):
+def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, model_name, simple_run = True):
     if simple_run == True:
         print '======================================[simple_run]======================================'
 
@@ -217,18 +218,8 @@ def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, withlexi
         with sess.as_default():
             if randomseed > 0:
                 tf.set_random_seed(randomseed)
-            
-            if withlexicon == 1:    
-                cnn = W2V_LEX_CNN(
-                    sequence_length=x_train.shape[1],
-                    num_classes=3,
-                    embedding_size=w2vdim,
-                    embedding_size_lex=lexdim,
-                    num_filters_lex = lexnumfilters,
-                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
-                    num_filters=w2vnumfilters,
-                    l2_reg_lambda=FLAGS.l2_reg_lambda)
-            else:
+
+            if model_name=='w2v':
                 cnn = W2V_CNN(
                     sequence_length=x_train.shape[1],
                     num_classes=3,
@@ -236,7 +227,30 @@ def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, withlexi
                     filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
                     num_filters=w2vnumfilters,
                     l2_reg_lambda=FLAGS.l2_reg_lambda
-                    )
+                )
+
+            elif model_name=='w2vlex':
+                cnn = W2V_LEX_CNN(
+                    sequence_length=x_train.shape[1],
+                    num_classes=3,
+                    embedding_size=w2vdim,
+                    embedding_size_lex=lexdim,
+                    num_filters_lex=lexnumfilters,
+                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
+                    num_filters=w2vnumfilters,
+                    l2_reg_lambda=FLAGS.l2_reg_lambda)
+
+            else: # model_name == 'attention'
+                cnn = TextCNNAttention(
+                    sequence_length=x_train.shape[1],
+                    num_classes=3,
+                    embedding_size=w2vdim,
+                    embedding_size_lex=lexdim,
+                    num_filters_lex=lexnumfilters,
+                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
+                    num_filters=w2vnumfilters,
+                    l2_reg_lambda=FLAGS.l2_reg_lambda)
+
 
             # Define Training procedure
             global_step = tf.Variable(0, name="global_step", trainable=False)
@@ -384,16 +398,26 @@ def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, withlexi
             for batch in batches:
                 x_batch, y_batch, x_batch_lex = zip(*batch)
 
-                if withlexicon == 1:
-                    train_step(x_batch, y_batch, x_batch_lex)
-                else:
+                if model_name=='w2v':
                     train_step(x_batch, y_batch)
+                else:
+                    train_step(x_batch, y_batch, x_batch_lex)
+
 
                 current_step = tf.train.global_step(sess, global_step)
                 if current_step % FLAGS.evaluate_every == 0:
                     print("Evaluation:")
 
-                    if withlexicon == 1:
+                    if model_name == 'w2v':
+                        curr_af1_dev = dev_step(x_dev, y_dev, writer=dev_summary_writer)
+                        # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
+                        # print("Saved model checkpoint to {}\n".format(path))
+
+                        curr_af1_tst = test_step(x_test, y_test, writer=test_summary_writer)
+                        # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
+                        # print("Saved model checkpoint to {}\n".format(path))
+
+                    else:
                         curr_af1_dev = dev_step(x_dev, y_dev, x_lex_dev, writer=dev_summary_writer)
                             # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
                             # print("Saved model checkpoint to {}\n".format(path))
@@ -401,14 +425,6 @@ def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, withlexi
                         curr_af1_tst = test_step(x_test, y_test, x_lex_test, writer=test_summary_writer)
                             # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
                             # print("Saved model checkpoint to {}\n".format(path))
-                    else:
-                        curr_af1_dev = dev_step(x_dev, y_dev, writer=dev_summary_writer)
-                            # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
-                            # print("Saved model checkpoint to {}\n".format(path))
-
-                        curr_af1_tst = test_step(x_test, y_test, writer=test_summary_writer)
-                            # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
-                            # print("Saved model checkpoint to {}\n".format(path))                        
 
                     if curr_af1_dev > max_af1_dev:
                         max_af1_dev = curr_af1_dev
@@ -442,12 +458,15 @@ if __name__ == "__main__":
     parser.add_argument('--lexnumfilters', default=9, type=int)
     parser.add_argument('--randomseed', default=7, type=int)
     parser.add_argument('--withlexicon', default=0, type=int)
+    parser.add_argument('--model', default='w2vlex', choices=['w2v', 'w2vlex', 'attention'], type=str) # w2v, w2vlex, attention
 
     args = parser.parse_args()
     program = os.path.basename(sys.argv[0])
 
-    print 'ADDITIONAL PARAMETER\n w2vdim: %d\n w2vnumfilters: %d\n lexdim: %d\n lexnumfilters: %d\n randomseed: %d\n withlexicon: %d\n' % (args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, args.withlexicon)
-    run_train(args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, args.withlexicon, simple_run=False)
-    # run_train(args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, simple_run=True)
+    print 'ADDITIONAL PARAMETER\n w2vdim: %d\n w2vnumfilters: %d\n lexdim: %d\n lexnumfilters: %d\n ' \
+          'randomseed: %d\n model_name: %s\n' \
+          % (args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, args.model)
+    run_train(args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, args.model, simple_run=False)
+    # run_train(args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, args.model, simple_run=True)
 
 
