@@ -465,7 +465,7 @@ if __name__ == "__main__":
     print 'ADDITIONAL PARAMETER\n w2vdim: %d\n w2vnumfilters: %d\n lexdim: %d\n lexnumfilters: %d\n ' \
           'randomseed: %d\n model_name: %s\n' \
           % (args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, args.model)
-    # run_train(args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, args.model, simple_run=False)
-    run_train(args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, args.model, simple_run=True)
+    run_train(args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, args.model, simple_run=False)
+    # run_train(args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, args.model, simple_run=True)
 
 
