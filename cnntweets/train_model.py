@@ -382,7 +382,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                 if score_type == 'f1':
                     return avg_f1
                 else:
-                    return acc
+                    return accuracy
 
             def test_step(x_batch, y_batch, x_batch_lex=None, writer=None, score_type='f1'):
                 """
@@ -415,7 +415,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                 if score_type == 'f1':
                     return avg_f1
                 else:
-                    return acc
+                    return accuracy
 
             # Generate batches
             batches = cnn_data_helpers.batch_iter(
