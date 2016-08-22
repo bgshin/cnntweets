@@ -44,12 +44,16 @@ print("")
 
 
 
-def load_w2v(w2vdim, simple_run = True):
+def load_w2v(w2vdim, simple_run = True, source = "twitter"):
     if simple_run:
         return {'a': np.array([np.float32(0.0)] * w2vdim)}
 
     else:
-        model_path = '../data/emory_w2v/w2v-%d.bin' % w2vdim
+        if source == "twitter":
+            model_path = '../data/emory_w2v/w2v-%d.bin' % w2vdim
+        elif source == "amazon":
+            model_path = '../data/emory_w2v/w2v-%d-%s.bin' % (w2vdim, source)
+
         model = Word2Vec.load_word2vec_format(model_path, binary=True)
         print("The vocabulary size is: " + str(len(model.vocab)))
 
@@ -166,7 +170,7 @@ def load_lexicon_unigram(lexdim):
 
     return norm_model, raw_model
 
-def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, model_name, simple_run = True):
+def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, model_name, simple_run = True):
     if simple_run == True:
         print '======================================[simple_run]======================================'
 
@@ -177,7 +181,11 @@ def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, model_na
         norm_model, raw_model = load_lexicon_unigram(lexdim)
 
     with Timer("w2v"):
-        w2vmodel = load_w2v(w2vdim, simple_run=simple_run)
+        if w2vsource == "twitter":
+            w2vmodel = load_w2v(w2vdim, simple_run=simple_run)
+        else:
+            w2vmodel = load_w2v(w2vdim, simple_run=simple_run)
+
 
     unigram_lexicon_model = norm_model
     # unigram_lexicon_model = raw_model
@@ -187,7 +195,10 @@ def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, model_na
                                                                    max_len)
         x_dev, y_dev, x_lex_dev = cnn_data_helpers.load_data('dev_sample', w2vmodel, unigram_lexicon_model, max_len)
         x_test, y_test, x_lex_test = cnn_data_helpers.load_data('tst_sample', w2vmodel, unigram_lexicon_model, max_len)
-
+    elif model_name == "w2vrt":
+        x_train, y_train, x_lex_train = cnn_data_helpers.load_data('trn', w2vmodel, unigram_lexicon_model, max_len, True)
+        x_dev, y_dev, x_lex_dev = cnn_data_helpers.load_data('dev', w2vmodel, unigram_lexicon_model, max_len, True)
+        x_test, y_test, x_lex_test = cnn_data_helpers.load_data('tst', w2vmodel, unigram_lexicon_model, max_len, True) 
     else:
         x_train, y_train, x_lex_train = cnn_data_helpers.load_data('trn', w2vmodel, unigram_lexicon_model, max_len)
         x_dev, y_dev, x_lex_dev = cnn_data_helpers.load_data('dev', w2vmodel, unigram_lexicon_model, max_len)
@@ -223,6 +234,15 @@ def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, model_na
                 cnn = W2V_CNN(
                     sequence_length=x_train.shape[1],
                     num_classes=3,
+                    embedding_size=w2vdim,
+                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
+                    num_filters=w2vnumfilters,
+                    l2_reg_lambda=FLAGS.l2_reg_lambda
+                )
+            elif model_name=='w2vrt':
+                cnn = W2V_CNN(
+                    sequence_length=x_train.shape[1],
+                    num_classes=5,
                     embedding_size=w2vdim,
                     filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
                     num_filters=w2vnumfilters,
@@ -331,7 +351,7 @@ def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, model_na
                 #      format(time_str, step, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1))
                 train_summary_writer.add_summary(summaries, step)
 
-            def dev_step(x_batch, y_batch, x_batch_lex=None, writer=None):
+            def dev_step(x_batch, y_batch, x_batch_lex=None, writer=None, score_type='f1'):
                 """
                 Evaluates model on a dev set
                 """
@@ -359,9 +379,12 @@ def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, model_na
                 if writer:
                     writer.add_summary(summaries, step)
 
-                return avg_f1
+                if score_type == 'f1':
+                    return avg_f1
+                else:
+                    return acc
 
-            def test_step(x_batch, y_batch, x_batch_lex=None, writer=None):
+            def test_step(x_batch, y_batch, x_batch_lex=None, writer=None, score_type='f1'):
                 """
                 Evaluates model on a test set
                 """
@@ -389,7 +412,10 @@ def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, model_na
                 if writer:
                     writer.add_summary(summaries, step)
 
-                return avg_f1
+                if score_type == 'f1':
+                    return avg_f1
+                else:
+                    return acc
 
             # Generate batches
             batches = cnn_data_helpers.batch_iter(
@@ -398,7 +424,7 @@ def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, model_na
             for batch in batches:
                 x_batch, y_batch, x_batch_lex = zip(*batch)
 
-                if model_name=='w2v':
+                if model_name=='w2v' or 'w2vrt':
                     train_step(x_batch, y_batch)
                 else:
                     train_step(x_batch, y_batch, x_batch_lex)
@@ -416,6 +442,10 @@ def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, model_na
                         curr_af1_tst = test_step(x_test, y_test, writer=test_summary_writer)
                         # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
                         # print("Saved model checkpoint to {}\n".format(path))
+
+                    elif model_name == 'w2vrt':
+                        curr_af1_dev = dev_step(x_dev, y_dev, writer=dev_summary_writer, score_type = 'acc')
+                        curr_af1_tst = test_step(x_test, y_test, writer=test_summary_writer, score_type = 'acc')
 
                     else:
                         curr_af1_dev = dev_step(x_dev, y_dev, x_lex_dev, writer=dev_summary_writer)
@@ -452,20 +482,21 @@ def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, model_na
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('--w2vsource', default='twitter', choices=['twitter','amazon'], type=str)
     parser.add_argument('--w2vdim', default=400, type=int)
     parser.add_argument('--w2vnumfilters', default=256, type=int)
     parser.add_argument('--lexdim', default=15, type=int)
     parser.add_argument('--lexnumfilters', default=9, type=int)
     parser.add_argument('--randomseed', default=7, type=int)
-    parser.add_argument('--model', default='w2vlex', choices=['w2v', 'w2vlex', 'attention'], type=str) # w2v, w2vlex, attention
+    parser.add_argument('--model', default='w2vlex', choices=['w2v', 'w2vrt', 'w2vlex', 'attention'], type=str) # w2v, w2vlex, attention
 
     args = parser.parse_args()
     program = os.path.basename(sys.argv[0])
 
-    print 'ADDITIONAL PARAMETER\n w2vdim: %d\n w2vnumfilters: %d\n lexdim: %d\n lexnumfilters: %d\n ' \
+    print 'ADDITIONAL PARAMETER\n w2vsource: %s\n w2vdim: %d\n w2vnumfilters: %d\n lexdim: %d\n lexnumfilters: %d\n ' \
           'randomseed: %d\n model_name: %s\n' \
-          % (args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, args.model)
-    run_train(args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, args.model, simple_run=False)
-    # run_train(args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, args.model, simple_run=True)
+          % (args.w2vsource, args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, args.model)
+
+    run_train(args.w2vsource, args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, args.model, simple_run=False)
 
 

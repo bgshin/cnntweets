@@ -26,34 +26,48 @@ def clean_str(string):
     return string.strip().lower()
 
 
-def load_data_and_labels(dataset):
+def load_data_and_labels(dataset, rottenTomato=False):
     """
     Loads MR polarity data from files, splits the data into words and generates labels.
     Returns split sentences and labels.
     """
-    template_txt = '../data/tweets/txt/%s'
-
+    if rottenTomato:
+        template_txt = '../data/rt-data-nlp4jtok/%s'
+    else:
+        template_txt = '../data/tweets/txt/%s'
 
     pathtxt = template_txt % dataset
-    # pathtxt = template_txt % 'tst'
-    # pathtxt = template_txt % 'trn'
-    # pathtxt = template_txt % 'dev'
 
     x_text=[line.split('\t')[2] for line in open(pathtxt, "r").readlines()]
-    # x_text = [clean_str(sent) for sent in x_text]
     x_text = [s.split(" ") for s in x_text]
 
     y = []
-    for line in open(pathtxt, "r").readlines():
-        senti=line.split('\t')[1]
-        if  senti == 'objective':
-            y.append([0, 1, 0])
+    if rottenTomato:
+        for line in open(pathtxt, "r").readlines():
+            senti=line.split('\t')[1]
+            if  senti == 'neutral':
+                y.append([0, 0, 1, 0, 0])
 
-        elif senti == 'positive':
-            y.append([0, 0, 1])
+            elif senti == 'positive':
+                y.append([0, 0, 0, 1, 0])
+            elif senti == 'very_positive':
+                y.append([0, 0, 0, 0 ,1])
+            elif senti == 'negative':
+                y.append([0, 1, 0, 0 ,0])
+            elif senti == 'very_negative':
+                y.append([1, 0, 0, 0 ,0])
 
-        else:  # negative
-            y.append([1, 0, 0])
+    else:    
+        for line in open(pathtxt, "r").readlines():
+            senti=line.split('\t')[1]
+            if  senti == 'objective':
+                y.append([0, 1, 0])
+
+            elif senti == 'positive':
+                y.append([0, 0, 1])
+
+            else:  # negative
+                y.append([1, 0, 0])
 
     return [x_text, y]
 
@@ -124,15 +138,19 @@ def build_input_data_with_w2v(sentences, labels, w2vmodel, lexiconModel):
     y = np.array(labels)
     return [x, y, x_lex]
 
-def load_data(dataset, w2vmodel, lexiconModel, padlen=None):
+def load_data(dataset, w2vmodel, lexiconModel, padlen=None, rottenTomato=False):
 # def load_data(dataset, w2vmodel, padlen=None):
     """
     Loads and preprocessed data for the MR dataset.
     Returns input vectors, labels, vocabulary, and inverse vocabulary.
     """
     # Load and preprocess data
-    sentences, labels = load_data_and_labels(dataset)
-    sentences_padded = pad_sentences(sentences, padlen)
+    if rottenTomato:
+        sentences, labels = load_data_and_labels(dataset, True)
+        sentences_padded = pad_sentences(sentences, padlen)
+    else:
+        sentences, labels = load_data_and_labels(dataset)
+        sentences_padded = pad_sentences(sentences, padlen)
 
     x, y , x_lex = build_input_data_with_w2v(sentences_padded, labels, w2vmodel, lexiconModel)
     return [x, y, x_lex]
