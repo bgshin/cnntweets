@@ -113,24 +113,18 @@ def get_train_data(w2vdim, lexfile, simple_run = True):
         pickle.dump(x, handle)
         pickle.dump(y, handle)
 
-    print 'hello'
-    #
-    # values = np.array(raw_model.values())
-    # new_val = np.copy(values)
-    # for i in range(len(norm_model.values()[0])):
-    #     pos = np.max(values, axis=0)[i]
 
 
+if __name__ == "__main__":
+    lexfile_list = ['EverythingUnigramsPMIHS.txt',
+                    'HS-AFFLEX-NEGLEX-unigrams.txt',
+                    'Maxdiff-Twitter-Lexicon_0to1.txt',
+                    'S140-AFFLEX-NEGLEX-unigrams.txt',
+                    'unigrams-pmilexicon.txt',
+                    'unigrams-pmilexicon_sentiment_140.txt',
+                    'BL.txt']
 
-lexfile_list = ['EverythingUnigramsPMIHS.txt',
-                'HS-AFFLEX-NEGLEX-unigrams.txt',
-                'Maxdiff-Twitter-Lexicon_0to1.txt',
-                'S140-AFFLEX-NEGLEX-unigrams.txt',
-                'unigrams-pmilexicon.txt',
-                'unigrams-pmilexicon_sentiment_140.txt',
-                'BL.txt']
 
-# lexfile = 'EverythingUnigramsPMIHS.txt'
-for lexfile in lexfile_list:
-    print '============lexfile($s)=============' % ( lexfile)
-    get_train_data(400, lexfile, simple_run = False)
+    for lexfile in lexfile_list:
+        print '============lexfile($s)=============' % ( lexfile)
+        get_train_data(400, lexfile, simple_run = False)
