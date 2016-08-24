@@ -84,7 +84,7 @@ def load_lexicon_unigram(lexfile):
 
 
 def get_train_data(w2vdim, lexfile, simple_run = True):
-    print 'dim(%d), lexfile($s)' % (w2vdim, lexfile)
+    print 'dim(%d), lexfile(%s)' % (w2vdim, lexfile)
     if simple_run == True:
         print '======================================[simple_run]======================================'
 
@@ -126,5 +126,4 @@ if __name__ == "__main__":
 
 
     for lexfile in lexfile_list:
-        print '============lexfile(%s)=============' % ( lexfile)
         get_train_data(400, lexfile, simple_run = False)
