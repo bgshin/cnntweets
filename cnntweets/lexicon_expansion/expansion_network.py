@@ -132,4 +132,5 @@ lexfile_list = ['EverythingUnigramsPMIHS.txt',
 
 # lexfile = 'EverythingUnigramsPMIHS.txt'
 for lexfile in lexfile_list:
+    print '============lexfile($s)=============' % ( lexfile)
     get_train_data(400, lexfile, simple_run = False)
