@@ -84,6 +84,7 @@ def load_lexicon_unigram(lexfile):
 
 
 def get_train_data(w2vdim, lexfile, simple_run = True):
+    print 'dim(%d), lexfile($s)' % (w2vdim, lexfile)
     if simple_run == True:
         print '======================================[simple_run]======================================'
 
