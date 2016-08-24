@@ -83,15 +83,14 @@ def load_lexicon_unigram(lexfile):
     return norm_model, raw_model
 
 
-def get_train_data(w2vdim, lexfile, simple_run = True):
-    print 'dim(%d), lexfile(%s)' % (w2vdim, lexfile)
+def get_train_data(w2vmodel, lexfile, simple_run = True):
+    print 'lexfile(%s)' % (lexfile)
     if simple_run == True:
         print '======================================[simple_run]======================================'
 
     max_len = 60
 
-    with Timer("w2v"):
-        w2vmodel = load_w2v2(w2vdim, simple_run=simple_run, base_path = '../../data/emory_w2v/')
+
 
 
     with Timer("lex"):
@@ -101,6 +100,11 @@ def get_train_data(w2vdim, lexfile, simple_run = True):
     data_x = []
     data_y = []
     for word, lex in norm_model.iteritems():
+        try:
+            test = w2vmodel[word]
+        except:
+            continue
+
         words.append(word)
         data_x.append(w2vmodel[word])
         data_y.append(lex)
@@ -109,9 +113,12 @@ def get_train_data(w2vdim, lexfile, simple_run = True):
     x = np.array(data_x)
     y = np.array(data_y)
 
-    with open('../../data/le/%s.pickle' % lexfile.replace('.txt', ''), 'wb') as handle:
-        pickle.dump(x, handle)
-        pickle.dump(y, handle)
+    print 'data size for %s is %d' % (lexfile, len(y))
+
+    with Timer("saving pickle for %s" % lexfile):
+        with open('../../data/le/%s.pickle' % lexfile.replace('.txt', ''), 'wb') as handle:
+            pickle.dump(x, handle)
+            pickle.dump(y, handle)
 
 
 
@@ -124,6 +131,10 @@ if __name__ == "__main__":
                     'unigrams-pmilexicon_sentiment_140.txt',
                     'BL.txt']
 
+    w2vdim = 400
+
+    with Timer("w2v"):
+        w2vmodel = load_w2v2(w2vdim, simple_run=False, base_path='../../data/emory_w2v/')
 
     for lexfile in lexfile_list:
-        get_train_data(400, lexfile, simple_run = False)
+        get_train_data(w2vmodel, lexfile, simple_run = False)
