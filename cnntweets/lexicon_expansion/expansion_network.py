@@ -126,5 +126,5 @@ if __name__ == "__main__":
 
 
     for lexfile in lexfile_list:
-        print '============lexfile($s)=============' % ( lexfile)
+        print '============lexfile(%s)=============' % ( lexfile)
         get_train_data(400, lexfile, simple_run = False)
