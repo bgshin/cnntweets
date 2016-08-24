@@ -9,7 +9,6 @@ from utils import cnn_data_helpers
 from utils.butils import Timer
 from cnn_models.w2v_lex_cnn import W2V_LEX_CNN
 from cnn_models.w2v_cnn import W2V_CNN
-from cnn_models.attention_cnn import TextCNNAttention
 from utils.word2vecReader import Word2Vec
 import time
 import gc
@@ -43,28 +42,13 @@ for attr, value in sorted(FLAGS.__flags.items()):
 print("")
 
 
-def load_w2v2(w2vdim, simple_run = True, base_path = '../data/emory_w2v/'):
+
+def load_w2v(w2vdim, simple_run = True):
     if simple_run:
         return {'a': np.array([np.float32(0.0)] * w2vdim)}
 
     else:
-        model_path = base_path + 'w2v-%d.bin' % w2vdim
-        model = Word2Vec.load_word2vec_format(model_path, binary=True)
-        print("The vocabulary size is: " + str(len(model.vocab)))
-
-        return model
-
-
-def load_w2v(w2vdim, simple_run = True, source = "twitter"):
-    if simple_run:
-        return {'a': np.array([np.float32(0.0)] * w2vdim)}
-
-    else:
-        if source == "twitter":
-            model_path = '../data/emory_w2v/w2v-%d.bin' % w2vdim
-        elif source == "amazon":
-            model_path = '../data/emory_w2v/w2v-%d-%s.bin' % (w2vdim, source)
-
+        model_path = '../data/emory_w2v/w2v-%d.bin' % w2vdim
         model = Word2Vec.load_word2vec_format(model_path, binary=True)
         print("The vocabulary size is: " + str(len(model.vocab)))
 
@@ -181,7 +165,7 @@ def load_lexicon_unigram(lexdim):
 
     return norm_model, raw_model
 
-def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, model_name, simple_run = True):
+def run_train(w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, lex_col, simple_run = True):
     if simple_run == True:
         print '======================================[simple_run]======================================'
 
@@ -192,11 +176,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
         norm_model, raw_model = load_lexicon_unigram(lexdim)
 
     with Timer("w2v"):
-        if w2vsource == "twitter":
-            w2vmodel = load_w2v(w2vdim, simple_run=simple_run)
-        else:
-            w2vmodel = load_w2v(w2vdim, simple_run=simple_run)
-
+        w2vmodel = load_w2v(w2vdim, simple_run=simple_run)
 
     unigram_lexicon_model = norm_model
     # unigram_lexicon_model = raw_model
@@ -204,17 +184,23 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
     if simple_run:
         x_train, y_train, x_lex_train = cnn_data_helpers.load_data('trn_sample', w2vmodel, unigram_lexicon_model,
                                                                    max_len)
+        # print len(x_lex_train)
+        # print len(x_lex_train[0])
+        # print x_lex_train.shape
+        # print x_lex_train[:, :, lex_col].shape
         x_dev, y_dev, x_lex_dev = cnn_data_helpers.load_data('dev_sample', w2vmodel, unigram_lexicon_model, max_len)
         x_test, y_test, x_lex_test = cnn_data_helpers.load_data('tst_sample', w2vmodel, unigram_lexicon_model, max_len)
-    elif model_name == "w2vrt":
-        x_train, y_train, x_lex_train = cnn_data_helpers.load_data('trn', w2vmodel, unigram_lexicon_model, max_len, True)
-        x_dev, y_dev, x_lex_dev = cnn_data_helpers.load_data('dev', w2vmodel, unigram_lexicon_model, max_len, True)
-        x_test, y_test, x_lex_test = cnn_data_helpers.load_data('tst', w2vmodel, unigram_lexicon_model, max_len, True) 
+
+
+
     else:
         x_train, y_train, x_lex_train = cnn_data_helpers.load_data('trn', w2vmodel, unigram_lexicon_model, max_len)
         x_dev, y_dev, x_lex_dev = cnn_data_helpers.load_data('dev', w2vmodel, unigram_lexicon_model, max_len)
         x_test, y_test, x_lex_test = cnn_data_helpers.load_data('tst', w2vmodel, unigram_lexicon_model, max_len)
 
+        x_lex_train = x_lex_train[:, :, lex_col]
+        x_lex_dev = x_lex_dev[:, :, lex_col]
+        x_lex_test = x_lex_test[:, :, lex_col]
 
     del(w2vmodel)
     del(norm_model)
@@ -240,48 +226,15 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
         with sess.as_default():
             if randomseed > 0:
                 tf.set_random_seed(randomseed)
-
-            if model_name=='w2v':
-                cnn = W2V_CNN(
-                    sequence_length=x_train.shape[1],
-                    num_classes=3,
-                    embedding_size=w2vdim,
-                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
-                    num_filters=w2vnumfilters,
-                    l2_reg_lambda=FLAGS.l2_reg_lambda
-                )
-            elif model_name=='w2vrt':
-                cnn = W2V_CNN(
-                    sequence_length=x_train.shape[1],
-                    num_classes=5,
-                    embedding_size=w2vdim,
-                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
-                    num_filters=w2vnumfilters,
-                    l2_reg_lambda=FLAGS.l2_reg_lambda
-                )
-
-            elif model_name=='w2vlex':
-                cnn = W2V_LEX_CNN(
-                    sequence_length=x_train.shape[1],
-                    num_classes=3,
-                    embedding_size=w2vdim,
-                    embedding_size_lex=lexdim,
-                    num_filters_lex=lexnumfilters,
-                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
-                    num_filters=w2vnumfilters,
-                    l2_reg_lambda=FLAGS.l2_reg_lambda)
-
-            else: # model_name == 'attention'
-                cnn = TextCNNAttention(
-                    sequence_length=x_train.shape[1],
-                    num_classes=3,
-                    embedding_size=w2vdim,
-                    embedding_size_lex=lexdim,
-                    num_filters_lex=lexnumfilters,
-                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
-                    num_filters=w2vnumfilters,
-                    l2_reg_lambda=FLAGS.l2_reg_lambda)
-
+            cnn = W2V_LEX_CNN(
+                sequence_length=x_train.shape[1],
+                num_classes=3,
+                embedding_size=w2vdim,
+                embedding_size_lex=lexdim,
+                num_filters_lex = lexnumfilters,
+                filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
+                num_filters=w2vnumfilters,
+                l2_reg_lambda=FLAGS.l2_reg_lambda)
 
             # Define Training procedure
             global_step = tf.Variable(0, name="global_step", trainable=False)
@@ -334,24 +287,17 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
             # Initialize all variables
             sess.run(tf.initialize_all_variables())
 
-            def train_step(x_batch, y_batch, x_batch_lex=None):
+            def train_step(x_batch, y_batch, x_batch_lex):
                 """
                 A single training step
                 """
-                if x_batch_lex != None:
-                    feed_dict = {
-                        cnn.input_x: x_batch,
-                        cnn.input_y: y_batch,
-                        # lexicon
-                        cnn.input_x_lexicon: x_batch_lex,
-                        cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
-                    }
-                else: 
-                    feed_dict = {
-                        cnn.input_x: x_batch,
-                        cnn.input_y: y_batch,
-                        cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
-                    }
+                feed_dict = {
+                    cnn.input_x: x_batch,
+                    cnn.input_y: y_batch,
+                    # lexicon
+                    cnn.input_x_lexicon: x_batch_lex,
+                    cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
+                }
                 _, step, summaries, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1 = sess.run(
                     [train_op, global_step, train_summary_op, cnn.loss, cnn.accuracy,
                      cnn.neg_r, cnn.neg_p, cnn.f1_neg, cnn.f1_pos, cnn.avg_f1],
@@ -362,24 +308,17 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                 #      format(time_str, step, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1))
                 train_summary_writer.add_summary(summaries, step)
 
-            def dev_step(x_batch, y_batch, x_batch_lex=None, writer=None, score_type='f1'):
+            def dev_step(x_batch, y_batch, x_batch_lex, writer=None):
                 """
                 Evaluates model on a dev set
                 """
-                if x_batch_lex != None:
-                    feed_dict = {
-                        cnn.input_x: x_batch,
-                        cnn.input_y: y_batch,
-                        # lexicon
-                        cnn.input_x_lexicon: x_batch_lex,
-                        cnn.dropout_keep_prob: 1.0
-                    }
-                else: 
-                    feed_dict = {
-                        cnn.input_x: x_batch,
-                        cnn.input_y: y_batch,
-                        cnn.dropout_keep_prob: 1.0
-                    }
+                feed_dict = {
+                    cnn.input_x: x_batch,
+                    cnn.input_y: y_batch,
+                    # lexicon
+                    cnn.input_x_lexicon: x_batch_lex,
+                    cnn.dropout_keep_prob: 1.0
+                }
                 step, summaries, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1 = sess.run(
                     [global_step, dev_summary_op, cnn.loss, cnn.accuracy,
                      cnn.neg_r, cnn.neg_p, cnn.f1_neg, cnn.f1_pos, cnn.avg_f1],
@@ -390,29 +329,19 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                 if writer:
                     writer.add_summary(summaries, step)
 
-                if score_type == 'f1':
-                    return avg_f1
-                else:
-                    return accuracy
+                return avg_f1
 
-            def test_step(x_batch, y_batch, x_batch_lex=None, writer=None, score_type='f1'):
+            def test_step(x_batch, y_batch, x_batch_lex, writer=None):
                 """
                 Evaluates model on a test set
                 """
-                if x_batch_lex != None:
-                    feed_dict = {
-                        cnn.input_x: x_batch,
-                        cnn.input_y: y_batch,
-                        # lexicon
-                        cnn.input_x_lexicon: x_batch_lex,
-                        cnn.dropout_keep_prob: 1.0
-                    }
-                else: 
-                    feed_dict = {
-                        cnn.input_x: x_batch,
-                        cnn.input_y: y_batch,
-                        cnn.dropout_keep_prob: 1.0
-                    }
+                feed_dict = {
+                    cnn.input_x: x_batch,
+                    cnn.input_y: y_batch,
+                    # lexicon
+                    cnn.input_x_lexicon: x_batch_lex,
+                    cnn.dropout_keep_prob: 1.0
+                }
                 step, summaries, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1 = sess.run(
                     [global_step, dev_summary_op, cnn.loss, cnn.accuracy,
                      cnn.neg_r, cnn.neg_p, cnn.f1_neg, cnn.f1_pos, cnn.avg_f1],
@@ -423,10 +352,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                 if writer:
                     writer.add_summary(summaries, step)
 
-                if score_type == 'f1':
-                    return avg_f1
-                else:
-                    return accuracy
+                return avg_f1
 
             # Generate batches
             batches = cnn_data_helpers.batch_iter(
@@ -434,38 +360,17 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
             # Training loop. For each batch...
             for batch in batches:
                 x_batch, y_batch, x_batch_lex = zip(*batch)
-
-                if model_name=='w2v' or 'w2vrt':
-                    train_step(x_batch, y_batch)
-                else:
-                    train_step(x_batch, y_batch, x_batch_lex)
-
-
+                train_step(x_batch, y_batch, x_batch_lex)
                 current_step = tf.train.global_step(sess, global_step)
                 if current_step % FLAGS.evaluate_every == 0:
                     print("Evaluation:")
-
-                    if model_name == 'w2v':
-                        curr_af1_dev = dev_step(x_dev, y_dev, writer=dev_summary_writer)
+                    curr_af1_dev = dev_step(x_dev, y_dev, x_lex_dev, writer=dev_summary_writer)
                         # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
                         # print("Saved model checkpoint to {}\n".format(path))
 
-                        curr_af1_tst = test_step(x_test, y_test, writer=test_summary_writer)
+                    curr_af1_tst = test_step(x_test, y_test, x_lex_test, writer=test_summary_writer)
                         # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
                         # print("Saved model checkpoint to {}\n".format(path))
-
-                    elif model_name == 'w2vrt':
-                        curr_af1_dev = dev_step(x_dev, y_dev, writer=dev_summary_writer, score_type = 'acc')
-                        curr_af1_tst = test_step(x_test, y_test, writer=test_summary_writer, score_type = 'acc')
-
-                    else:
-                        curr_af1_dev = dev_step(x_dev, y_dev, x_lex_dev, writer=dev_summary_writer)
-                            # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
-                            # print("Saved model checkpoint to {}\n".format(path))
-
-                        curr_af1_tst = test_step(x_test, y_test, x_lex_test, writer=test_summary_writer)
-                            # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
-                            # print("Saved model checkpoint to {}\n".format(path))
 
                     if curr_af1_dev > max_af1_dev:
                         max_af1_dev = curr_af1_dev
@@ -493,21 +398,27 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--w2vsource', default='twitter', choices=['twitter','amazon'], type=str)
-    parser.add_argument('--w2vdim', default=400, type=int)
+    parser.add_argument('--w2vdim', default=200, type=int)
     parser.add_argument('--w2vnumfilters', default=256, type=int)
     parser.add_argument('--lexdim', default=15, type=int)
     parser.add_argument('--lexnumfilters', default=9, type=int)
     parser.add_argument('--randomseed', default=7, type=int)
-    parser.add_argument('--model', default='w2vlex', choices=['w2v', 'w2vrt', 'w2vlex', 'attention'], type=str) # w2v, w2vlex, attention
+    parser.add_argument('--lexcol', nargs='+', type=int)
 
     args = parser.parse_args()
     program = os.path.basename(sys.argv[0])
 
-    print 'ADDITIONAL PARAMETER\n w2vsource: %s\n w2vdim: %d\n w2vnumfilters: %d\n lexdim: %d\n lexnumfilters: %d\n ' \
-          'randomseed: %d\n model_name: %s\n' \
-          % (args.w2vsource, args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, args.model)
 
-    run_train(args.w2vsource, args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, args.model, simple_run=False)
+    if args.lexcol is not None:
+        args.lexdim = len(args.lexcol)
 
+    else:
+        args.lexcol = range(args.lexdim)
 
+    print 'ADDITIONAL PARAMETER\n w2vdim: %d\n w2vnumfilters: %d\n lexdim: %d\n lexnumfilters: %d\n randomseed: %d\n' % (
+    args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed)
+
+    print 'lexcol', args.lexcol
+
+    run_train(args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, args.lexcol, simple_run=False)
+    # run_train(args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, args.lexcol, simple_run=True)
