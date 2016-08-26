@@ -5,6 +5,27 @@
 * From [this](http://saifmohammad.com/WebPages/lexicons.html)
 
 
+## At a glance
+| Lexicon                           | Raw Range                       | Normalized Range |
+|-----------------------------------|---------------------------------|------------------|
+| BL                                | -1 or 1 (binary)                | -                |
+| EverythingUnigramsPMIHS           | [-10.7608678862, 10.4950860272] | [-1,1]           |
+| HS-AFFLEX-NEGLEX-unigrams         | [-10.025, 10.661]               | [-1,1]           |
+| HS-AFFLEX-NEGLEX-unigrams         | [0, 133421]                     | [0,1]            |
+| HS-AFFLEX-NEGLEX-unigrams         | [0, 190358]                     | [0,1]            |
+| Maxdiff-Twitter-Lexicon_0to1      | [0.008, 0.992]                  | [0,1]            |
+| S140-AFFLEX-NEGLEX-unigrams       | [-5.844, 4.495]                 | [-1,1]           |
+| S140-AFFLEX-NEGLEX-unigrams       | [0, 381203]                     | [0,1]            |
+| S140-AFFLEX-NEGLEX-unigrams       | [0, 469618]                     | [0,1]            |
+| unigrams-pmilexicon               | [-6.925, 7.526]                 | [-1,1]           |
+| unigrams-pmilexicon               | [0, 195575]                     | [0,1]            |
+| unigrams-pmilexicon               | [0, 335321]                     | [0,1]            |
+| unigrams-pmilexicon_sentiment_140 | [-4.999, 5.0]                   | [-1,1]           |
+| unigrams-pmilexicon_sentiment_140 | [0, 295790]                     | [0,1]            |
+| unigrams-pmilexicon_sentiment_140 | [0, 472371]                     | [0,1]            |
+
+
+
 ## File format
 
 ### HashtagSentimentAffLexNegLex
@@ -61,6 +82,8 @@
 
 ### BL
 * filename: BL.txt
-* f = 1
+* f = 1, 
+* range: BINARY (-1 or 1)
+* normalized range:  BINARY (-1 or 1)
 * N = 6,786
 
