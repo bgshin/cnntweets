@@ -182,17 +182,48 @@ def load_lexicon_unigram(lexdim):
 
     return norm_model, raw_model
 
-def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, model_name, simple_run = True):
+def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, model_name, is_expanded, simple_run = True):
     if simple_run == True:
         print '======================================[simple_run]======================================'
 
 
     max_len = 60
+    norm_model = []
 
     with Timer("lex"):
-        norm_model, raw_model = load_lexicon_unigram(lexdim)
+        # norm_model, raw_model = load_lexicon_unigram(lexdim)
         # with open('../data/lexicon_data/lex15.pickle', 'rb') as handle:
         #     norm_model = pickle.load(handle)
+        default_vector_dic = {'EverythingUnigramsPMIHS': [0],
+                              'HS-AFFLEX-NEGLEX-unigrams': [0, 0, 0],
+                              'Maxdiff-Twitter-Lexicon_0to1': [0.5],
+                              'S140-AFFLEX-NEGLEX-unigrams': [0, 0, 0],
+                              'unigrams-pmilexicon': [0, 0, 0],
+                              'unigrams-pmilexicon_sentiment_140': [0, 0, 0],
+                              'BL': [0]}
+
+        lexfile_list = ['EverythingUnigramsPMIHS.pickle',
+                        'HS-AFFLEX-NEGLEX-unigrams.pickle',
+                        'Maxdiff-Twitter-Lexicon_0to1.pickle',
+                        'S140-AFFLEX-NEGLEX-unigrams.pickle',
+                        'unigrams-pmilexicon.pickle',
+                        'unigrams-pmilexicon_sentiment_140.pickle',
+                        'BL.pickle']
+
+
+        for lexfile in lexfile_list:
+            if is_expanded == 0:
+                fname = '../../data/le/%s' % lexfile
+
+            else:
+                fname = '../../data/le/exp_%s' % lexfile
+
+            with open(fname, 'rb') as handle:
+                each_model = pickle.load(handle)
+                default_vector = default_vector_dic[lexfile.replace('.pickle', '')]
+                each_model["<PAD/>"] = default_vector
+                norm_model.append(each_model)
+
 
     with Timer("w2v"):
         if w2vsource == "twitter":
@@ -221,7 +252,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
 
     del(w2vmodel)
     del(norm_model)
-    del(raw_model)
+    # del(raw_model)
     gc.collect()
 
     print("Train/Dev split: {:d}/{:d}".format(len(y_train), len(y_dev)))
@@ -503,15 +534,18 @@ if __name__ == "__main__":
     parser.add_argument('--lexnumfilters', default=9, type=int)
     parser.add_argument('--randomseed', default=7, type=int)
     parser.add_argument('--model', default='w2vlex', choices=['w2v', 'w2vrt', 'w2vlex', 'attention'], type=str) # w2v, w2vlex, attention
+    parser.add_argument('--expanded', default=0, type=int)
 
     args = parser.parse_args()
     program = os.path.basename(sys.argv[0])
 
     print 'ADDITIONAL PARAMETER\n w2vsource: %s\n w2vdim: %d\n w2vnumfilters: %d\n lexdim: %d\n lexnumfilters: %d\n ' \
-          'randomseed: %d\n model_name: %s\n' \
-          % (args.w2vsource, args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, args.model)
+          'randomseed: %d\n model_name: %s\n expanded: %d' \
+          % (args.w2vsource, args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed,
+             args.model, args.expanded)
 
-    run_train(args.w2vsource, args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, args.model, simple_run=False)
+    run_train(args.w2vsource, args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed,
+              args.model, args.expanded, simple_run=False)
     # run_train(args.w2vsource, args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed,
     #           args.model, simple_run=True)
 

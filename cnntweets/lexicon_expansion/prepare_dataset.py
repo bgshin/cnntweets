@@ -118,6 +118,9 @@ def get_train_data(w2vmodel, lexfile, simple_run = True):
 
     with Timer("saving pickle for %s" % lexfile):
         with open('../../data/le/%s.pickle' % lexfile.replace('.txt', ''), 'wb') as handle:
+            pickle.dump(norm_model, handle)
+
+        with open('../../data/le/dataset_%s.pickle' % lexfile.replace('.txt', ''), 'wb') as handle:
             pickle.dump(x, handle)
             pickle.dump(y, handle)
             pickle.dump(norm_model, handle)

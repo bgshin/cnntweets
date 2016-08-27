@@ -44,7 +44,7 @@ def load_w2v2(w2vdim, simple_run = True, base_path = '../../data/emory_w2v/'):
 
 def load_data(lexfile):
     with Timer("loading pickle for %s" % lexfile):
-        with open('../../data/le/%s' % lexfile, 'rb') as handle:
+        with open('../../data/le/dataset_%s' % lexfile, 'rb') as handle:
             x = pickle.load(handle)
             y = pickle.load(handle)
             norm_model = pickle.load(handle)
