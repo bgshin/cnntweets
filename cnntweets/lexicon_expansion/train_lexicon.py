@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from cnntweets.utils.cnn_data_helpers import batch_iter
+import argparse
 
 import sys
 import os
@@ -13,8 +14,11 @@ from cnntweets.utils.word2vecReader import Word2Vec
 
 # Misc Parameters
 tf.flags.DEFINE_integer("batch_size", 30, "Batch Size (default: 64)")
-tf.flags.DEFINE_integer("num_epochs", 1, "Number of training epochs (default: 200)")
+tf.flags.DEFINE_integer("num_epochs", 10, "Number of training epochs (default: 200)")
 tf.flags.DEFINE_integer("evaluate_every", 100, "Evaluate model on dev set after this many steps (default: 100)")
+# Misc Parameters
+tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
+tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
 
 
 FLAGS = tf.flags.FLAGS
@@ -205,41 +209,44 @@ def expand_lexicon(model_path, w2vdim, outputdim, dataset, w2vsource='twitter'):
     lex_model = dataset.lex_model
 
     with Timer("Loading w2v..."):
-        if w2vsource == "twitter":
-            w2vmodel = load_w2v2(w2vdim, simple_run=False)
-        else:
-            w2vmodel = load_w2v2(w2vdim, simple_run=False)
+        # w2vmodel = load_w2v2(w2vdim, simple_run=True)
+        w2vmodel = load_w2v2(w2vdim, simple_run=False)
 
-    with tf.Graph().as_default():
-        session_conf = tf.ConfigProto(
-            allow_soft_placement=FLAGS.allow_soft_placement,
-            log_device_placement=FLAGS.log_device_placement)
-        sess = tf.Session(config=session_conf)
-        with sess.as_default():
-            mcr = MultiClassRegressionPrediction(w2vdim, outputdim, neg_output=neg_output)
+    with Timer("Expanding w2v...(%s)" % dataset.name):
+        with tf.Graph().as_default():
+            session_conf = tf.ConfigProto(
+                allow_soft_placement=FLAGS.allow_soft_placement,
+                log_device_placement=FLAGS.log_device_placement)
+            sess = tf.Session(config=session_conf)
+            with sess.as_default():
+                mcr = MultiClassRegressionPrediction(w2vdim, outputdim, neg_output=neg_output)
 
-            saver = tf.train.Saver(tf.all_variables())
-            saver.restore(sess, model_path)
+                saver = tf.train.Saver(tf.all_variables())
+                saver.restore(sess, model_path)
 
-            def get_prediction(x_batch):
-                """
-                Evaluates model on a test set
-                """
-                feed_dict = {
-                    mcr.input_x: x_batch
-                }
+                def get_prediction(x_batch):
+                    """
+                    Evaluates model on a test set
+                    """
+                    feed_dict = {
+                        mcr.input_x: x_batch
+                    }
 
-                score = sess.run([mcr.score], feed_dict)
-                print score
-                return score
+                    scores = sess.run([mcr.scores], feed_dict)
+                    # print scores[0]
+                    return scores[0]
 
+            # lex_pred = get_prediction(np.random.rand(1,400))
 
-        for word, vec in enumerate(w2vmodel):
-            if word in lex_model:
-                continue
-            else:
-                lex_pred = get_prediction(vec)
-                lex_model[word] = lex_pred
+            for word in w2vmodel.vocab.keys():
+                if word in lex_model:
+                    continue
+                else:
+                    vec = w2vmodel[word]
+                    lex_pred = get_prediction(vec.reshape([1,vec.shape[0]]))
+                    lex_model[word] = lex_pred
+
+    return lex_model
 
 
 
@@ -249,6 +256,12 @@ def expand_lexicon(model_path, w2vdim, outputdim, dataset, w2vsource='twitter'):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--lexindex', default=0, choices=[0, 1, 2, 3, 4, 5, 6], type=int)
+
+    args = parser.parse_args()
+    program = os.path.basename(sys.argv[0])
+
     lexfile_list = ['EverythingUnigramsPMIHS.pickle',
                     'HS-AFFLEX-NEGLEX-unigrams.pickle',
                     'Maxdiff-Twitter-Lexicon_0to1.pickle',
@@ -266,9 +279,11 @@ if __name__ == "__main__":
                  'BL': True
                  }  # True, False, False
 
-    lexfile = lexfile_list[6]
+    lexindex = args.lexindex
+    lexfile = lexfile_list[lexindex]
     neg_output = range_neg[lexfile.replace('.pickle', '')]
 
+    print 'train w2v to lex models for %s' % lexfile.replace('.pickle', '')
 
     dataset = load_each_lexicon(lexfile)
     x_dim = dataset.x_trn.shape[1]
@@ -280,8 +295,10 @@ if __name__ == "__main__":
     print lexfile
     print 'NUM_DATA(%d), y_dim(%d)' % (NUM_DATA, y_dim)
 
-    expand_lexicon(best_mode_path, x_dim, y_dim, dataset)
+    expanded_lex_model = expand_lexicon(best_mode_path, x_dim, y_dim, dataset)
 
-
+    with Timer("saving expanded lex for %s" % lexfile):
+        with open('../../data/le/exp_%s' % lexfile, 'wb') as handle:
+            pickle.dump(expanded_lex_model, handle)
 
 
