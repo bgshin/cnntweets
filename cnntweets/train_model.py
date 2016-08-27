@@ -213,10 +213,10 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
 
         for lexfile in lexfile_list:
             if is_expanded == 0:
-                fname = '../../data/le/%s' % lexfile
+                fname = '../data/le/%s' % lexfile
 
             else:
-                fname = '../../data/le/exp_%s' % lexfile
+                fname = '../data/le/exp_%s' % lexfile
 
             with open(fname, 'rb') as handle:
                 each_model = pickle.load(handle)
