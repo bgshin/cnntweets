@@ -15,6 +15,7 @@ import time
 import gc
 import re
 import sys
+import pickle
 
 # Parameters
 # ==================================================
@@ -190,6 +191,8 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
 
     with Timer("lex"):
         norm_model, raw_model = load_lexicon_unigram(lexdim)
+        # with open('../data/lexicon_data/lex15.pickle', 'rb') as handle:
+        #     norm_model = pickle.load(handle)
 
     with Timer("w2v"):
         if w2vsource == "twitter":
@@ -435,7 +438,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
             for batch in batches:
                 x_batch, y_batch, x_batch_lex = zip(*batch)
 
-                if model_name=='w2v' or 'w2vrt':
+                if model_name=='w2v' or model_name=='w2vrt':
                     train_step(x_batch, y_batch)
                 else:
                     train_step(x_batch, y_batch, x_batch_lex)
@@ -509,5 +512,7 @@ if __name__ == "__main__":
           % (args.w2vsource, args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, args.model)
 
     run_train(args.w2vsource, args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed, args.model, simple_run=False)
+    # run_train(args.w2vsource, args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed,
+    #           args.model, simple_run=True)
 
 
