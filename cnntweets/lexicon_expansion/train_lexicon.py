@@ -14,7 +14,7 @@ from cnntweets.utils.word2vecReader import Word2Vec
 
 # Misc Parameters
 tf.flags.DEFINE_integer("batch_size", 30, "Batch Size (default: 64)")
-tf.flags.DEFINE_integer("num_epochs", 10, "Number of training epochs (default: 200)")
+tf.flags.DEFINE_integer("num_epochs", 100, "Number of training epochs (default: 200)")
 tf.flags.DEFINE_integer("evaluate_every", 100, "Evaluate model on dev set after this many steps (default: 100)")
 # Misc Parameters
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
@@ -130,9 +130,9 @@ def find_best_model(dataset, w2vdim, outputdim, neg_output):
                 curr_loss_trn, curr_avg_loss_trn = train_step(x_batch, y_batch)
                 current_step = tf.train.global_step(sess, global_step)
 
-                print 'Train: [%d] Curr loss for trn (%f) avgloss(%f)\n' % (
-                    current_step, curr_loss_trn, curr_avg_loss_trn)
-                sys.stdout.flush()
+                # print 'Train: [%d] Curr loss for trn (%f) avgloss(%f)\n' % (
+                #     current_step, curr_loss_trn, curr_avg_loss_trn)
+                # sys.stdout.flush()
 
 
 
@@ -262,6 +262,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     program = os.path.basename(sys.argv[0])
 
+
     lexfile_list = ['EverythingUnigramsPMIHS.pickle',
                     'HS-AFFLEX-NEGLEX-unigrams.pickle',
                     'Maxdiff-Twitter-Lexicon_0to1.pickle',
@@ -282,6 +283,10 @@ if __name__ == "__main__":
     lexindex = args.lexindex
     lexfile = lexfile_list[lexindex]
     neg_output = range_neg[lexfile.replace('.pickle', '')]
+
+    print 'ADDITIONAL PARAMETER\n lexindex: %d\n lexfile: %s\n' % (args.lexindex, lexfile)
+
+
 
     print 'train w2v to lex models for %s' % lexfile.replace('.pickle', '')
 
