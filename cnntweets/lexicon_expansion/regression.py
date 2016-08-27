@@ -35,6 +35,30 @@ class MultiClassRegression(object):
             self.loss = tf.reduce_mean(self.losses) + l2_reg_lambda * l2_loss
 
 
+class MultiClassRegressionPrediction(object):
+    """
+    A logistic regression for cancer classification.
+    """
+    def __init__(self, num_features, num_output, neg_output=False):
+        self.input_x = tf.placeholder(tf.float32, [None, num_features], name="input_x")
+
+        # Keeping track of l2 regularization loss (optional)
+        l2_loss = tf.constant(0.0)
+
+        with tf.name_scope("softmax"):
+            filter_shape = [num_features, num_output]
+            W = tf.Variable(tf.truncated_normal(filter_shape, stddev=0.1))
+            b = tf.Variable(tf.constant(0.1, shape=[num_output]))
+
+            self.raw_scores = tf.nn.xw_plus_b(self.input_x, W, b, name="scores")
+            if neg_output:
+                self.scores = tf.nn.elu(self.raw_scores, name="tanh")
+
+            else:
+                self.scores = tf.nn.relu(self.raw_scores, name="relu")
+
+
+
 
 class MultiClassRegression2Layer(object):
     """

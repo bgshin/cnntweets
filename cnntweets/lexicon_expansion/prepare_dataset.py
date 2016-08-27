@@ -1,4 +1,5 @@
 from cnntweets.utils.butils import Timer
+from cnntweets.utils.cnn_data_helpers import batch_iter
 from cnntweets.train_model import load_w2v2
 import re
 import numpy as np
@@ -119,6 +120,8 @@ def get_train_data(w2vmodel, lexfile, simple_run = True):
         with open('../../data/le/%s.pickle' % lexfile.replace('.txt', ''), 'wb') as handle:
             pickle.dump(x, handle)
             pickle.dump(y, handle)
+            pickle.dump(norm_model, handle)
+
 
 
 
