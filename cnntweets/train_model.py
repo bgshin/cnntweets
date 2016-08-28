@@ -42,6 +42,8 @@ print("\nParameters:")
 for attr, value in sorted(FLAGS.__flags.items()):
     print("{}={}".format(attr.upper(), value))
 print("")
+os.system('cls' if os.name == 'nt' else 'clear')
+
 
 
 def load_w2v2(w2vdim, simple_run = True, base_path = '../data/emory_w2v/'):
@@ -247,7 +249,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                                                                    max_len)
         x_dev, y_dev, x_lex_dev = cnn_data_helpers.load_data('dev_sample', w2vmodel, unigram_lexicon_model, max_len)
         x_test, y_test, x_lex_test = cnn_data_helpers.load_data('tst_sample', w2vmodel, unigram_lexicon_model, max_len)
-    elif model_name == "w2vrt":
+    elif model_name == "w2vrt" or  model_name == "w2vrtlex":
         x_train, y_train, x_lex_train = cnn_data_helpers.load_data('trn', w2vmodel, unigram_lexicon_model, max_len, True)
         x_dev, y_dev, x_lex_dev = cnn_data_helpers.load_data('dev', w2vmodel, unigram_lexicon_model, max_len, True)
         x_test, y_test, x_lex_test = cnn_data_helpers.load_data('tst', w2vmodel, unigram_lexicon_model, max_len, True) 
@@ -305,6 +307,17 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                 cnn = W2V_LEX_CNN(
                     sequence_length=x_train.shape[1],
                     num_classes=3,
+                    embedding_size=w2vdim,
+                    embedding_size_lex=lexdim,
+                    num_filters_lex=lexnumfilters,
+                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
+                    num_filters=w2vnumfilters,
+                    l2_reg_lambda=FLAGS.l2_reg_lambda)
+           
+            elif model_name=='w2vrtlex':
+                cnn = W2V_LEX_CNN(
+                    sequence_length=x_train.shape[1],
+                    num_classes=5,
                     embedding_size=w2vdim,
                     embedding_size_lex=lexdim,
                     num_filters_lex=lexnumfilters,
@@ -499,6 +512,9 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                         curr_af1_dev = dev_step(x_dev, y_dev, writer=dev_summary_writer, score_type = 'acc')
                         curr_af1_tst = test_step(x_test, y_test, writer=test_summary_writer, score_type = 'acc')
 
+                    elif model_name == 'w2vrtlex':
+                        curr_af1_dev = dev_step(x_dev, y_dev, x_lex_dev, writer=dev_summary_writer, score_type = 'acc')
+                        curr_af1_tst = test_step(x_test, y_test, x_lex_test, writer=test_summary_writer, score_type = 'acc')
                     else:
                         curr_af1_dev = dev_step(x_dev, y_dev, x_lex_dev, writer=dev_summary_writer)
                             # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
@@ -540,7 +556,7 @@ if __name__ == "__main__":
     parser.add_argument('--lexdim', default=15, type=int)
     parser.add_argument('--lexnumfilters', default=9, type=int)
     parser.add_argument('--randomseed', default=7, type=int)
-    parser.add_argument('--model', default='w2vlex', choices=['w2v', 'w2vrt', 'w2vlex', 'attention'], type=str) # w2v, w2vlex, attention
+    parser.add_argument('--model', default='w2vlex', choices=['w2v', 'w2vrt', 'w2vlex', 'w2vrtlex', 'attention'], type=str) # w2v, w2vlex, attention
     parser.add_argument('--expanded', default=0, choices=[0,1,2,3,4,5,6,7], type=int)
 
     args = parser.parse_args()
