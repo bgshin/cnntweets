@@ -191,38 +191,45 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
     norm_model = []
 
     with Timer("lex"):
-        # norm_model, raw_model = load_lexicon_unigram(lexdim)
-        # with open('../data/lexicon_data/lex15.pickle', 'rb') as handle:
-        #     norm_model = pickle.load(handle)
-        default_vector_dic = {'EverythingUnigramsPMIHS': [0],
-                              'HS-AFFLEX-NEGLEX-unigrams': [0, 0, 0],
-                              'Maxdiff-Twitter-Lexicon_0to1': [0.5],
-                              'S140-AFFLEX-NEGLEX-unigrams': [0, 0, 0],
-                              'unigrams-pmilexicon': [0, 0, 0],
-                              'unigrams-pmilexicon_sentiment_140': [0, 0, 0],
-                              'BL': [0]}
+        if is_expanded == 0:
+            print 'old way of loading lexicon'
+            norm_model, raw_model = load_lexicon_unigram(lexdim)
+            # with open('../data/lexicon_data/lex15.pickle', 'rb') as handle:
+            #     norm_model = pickle.load(handle)
 
-        lexfile_list = ['EverythingUnigramsPMIHS.pickle',
-                        'HS-AFFLEX-NEGLEX-unigrams.pickle',
-                        'Maxdiff-Twitter-Lexicon_0to1.pickle',
-                        'S140-AFFLEX-NEGLEX-unigrams.pickle',
-                        'unigrams-pmilexicon.pickle',
-                        'unigrams-pmilexicon_sentiment_140.pickle',
-                        'BL.pickle']
+        else:
+            print 'new way of loading lexicon'
+            default_vector_dic = {'EverythingUnigramsPMIHS': [0],
+                                  'HS-AFFLEX-NEGLEX-unigrams': [0, 0, 0],
+                                  'Maxdiff-Twitter-Lexicon_0to1': [0.5],
+                                  'S140-AFFLEX-NEGLEX-unigrams': [0, 0, 0],
+                                  'unigrams-pmilexicon': [0, 0, 0],
+                                  'unigrams-pmilexicon_sentiment_140': [0, 0, 0],
+                                  'BL': [0]}
+
+            lexfile_list = ['EverythingUnigramsPMIHS.pickle',
+                            'HS-AFFLEX-NEGLEX-unigrams.pickle',
+                            'Maxdiff-Twitter-Lexicon_0to1.pickle',
+                            'S140-AFFLEX-NEGLEX-unigrams.pickle',
+                            'unigrams-pmilexicon.pickle',
+                            'unigrams-pmilexicon_sentiment_140.pickle',
+                            'BL.pickle']
 
 
-        for lexfile in lexfile_list:
-            if is_expanded == 0:
-                fname = '../data/le/%s' % lexfile
+            for idx, lexfile in enumerate(lexfile_list):
+                if is_expanded-1 == idx:
+                    fname = '../data/le/exp_%s' % lexfile
+                    print 'expanded lexicon for %s' % lexfile
 
-            else:
-                fname = '../data/le/exp_%s' % lexfile
+                else:
+                    fname = '../data/le/%s' % lexfile
+                    print 'default lexicon for %s' % lexfile
 
-            with open(fname, 'rb') as handle:
-                each_model = pickle.load(handle)
-                default_vector = default_vector_dic[lexfile.replace('.pickle', '')]
-                each_model["<PAD/>"] = default_vector
-                norm_model.append(each_model)
+                with open(fname, 'rb') as handle:
+                    each_model = pickle.load(handle)
+                    default_vector = default_vector_dic[lexfile.replace('.pickle', '')]
+                    each_model["<PAD/>"] = default_vector
+                    norm_model.append(each_model)
 
 
     with Timer("w2v"):
@@ -534,7 +541,7 @@ if __name__ == "__main__":
     parser.add_argument('--lexnumfilters', default=9, type=int)
     parser.add_argument('--randomseed', default=7, type=int)
     parser.add_argument('--model', default='w2vlex', choices=['w2v', 'w2vrt', 'w2vlex', 'attention'], type=str) # w2v, w2vlex, attention
-    parser.add_argument('--expanded', default=0, type=int)
+    parser.add_argument('--expanded', default=0, choices=[0,1,2,3,4,5,6,7], type=int)
 
     args = parser.parse_args()
     program = os.path.basename(sys.argv[0])
