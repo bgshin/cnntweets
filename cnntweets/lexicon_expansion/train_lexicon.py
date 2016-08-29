@@ -181,6 +181,8 @@ def load_each_lexicon(lexfile, release):
     TEST_SIZE = int(NUM_DATA * TEST_RATIO)
     TRAIN_SIZE = NUM_DATA - (VALIDATION_SIZE + TEST_SIZE)
 
+    print '(TRAIN_SIZE,VALIDATION_SIZE,TEST_SIZE)=(%d,%d,%d)' % (TRAIN_SIZE,VALIDATION_SIZE,TEST_SIZE)
+
 
     x_trn = x_all[0:TRAIN_SIZE]
     y_trn = y_all[0:TRAIN_SIZE]
