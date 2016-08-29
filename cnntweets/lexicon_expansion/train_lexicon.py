@@ -169,7 +169,7 @@ def load_each_lexicon(lexfile):
     x_all, y_all = shuffle(x_all_order, y_all_order, random_state=0)
 
     VALIDATION_RATIO = 0.1
-    TEST_RATIO = 0.3
+    TEST_RATIO = 0.
 
     NUM_DATA = x_all.shape[0]
     VALIDATION_SIZE = int(NUM_DATA * VALIDATION_RATIO)
