@@ -175,7 +175,7 @@ def load_each_lexicon(lexfile, release):
 
     else:
         VALIDATION_RATIO = 0.1
-        TEST_RATIO = 0.
+        TEST_RATIO = 0.1
 
     VALIDATION_SIZE = int(NUM_DATA * VALIDATION_RATIO)
     TEST_SIZE = int(NUM_DATA * TEST_RATIO)
@@ -317,7 +317,7 @@ if __name__ == "__main__":
     expanded_lex_model = expand_lexicon(best_mode_path, x_dim, y_dim, dataset)
 
     with Timer("saving expanded lex for %s" % lexfile):
-        with open('../../data/le/exp_%s' % lexfile, 'wb') as handle:
+        with open('../../data/le/exp_1.1.%s' % lexfile, 'wb') as handle:
             pickle.dump(expanded_lex_model, handle)
 
 
