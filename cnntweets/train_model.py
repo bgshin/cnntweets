@@ -219,7 +219,11 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
 
 
             for idx, lexfile in enumerate(lexfile_list):
-                if is_expanded-1 == idx:
+                if is_expanded == 1234567: # expand all
+                    fname = '../data/le/exp_1.1.%s' % lexfile
+                    print 'expanded lexicon for exp_1.1.%s' % lexfile
+
+                elif is_expanded-1 == idx:
                     # fname = '../data/le/exp_%s' % lexfile
                     # print 'expanded lexicon for exp_%s' % lexfile
                     fname = '../data/le/exp_1.1.%s' % lexfile
@@ -559,7 +563,7 @@ if __name__ == "__main__":
     parser.add_argument('--lexnumfilters', default=9, type=int)
     parser.add_argument('--randomseed', default=7, type=int)
     parser.add_argument('--model', default='w2vlex', choices=['w2v', 'w2vrt', 'w2vlex', 'w2vrtlex', 'attention'], type=str) # w2v, w2vlex, attention
-    parser.add_argument('--expanded', default=0, choices=[0,1,2,3,4,5,6,7], type=int)
+    parser.add_argument('--expanded', default=0, choices=[0,1,2,3,4,5,6,7, 1234567], type=int)
 
     args = parser.parse_args()
     program = os.path.basename(sys.argv[0])
