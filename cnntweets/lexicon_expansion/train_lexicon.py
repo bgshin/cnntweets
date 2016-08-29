@@ -164,17 +164,23 @@ def find_best_model(dataset, w2vdim, outputdim, neg_output):
             sys.stdout.flush()
     return best_mode_path
 
-def load_each_lexicon(lexfile):
+def load_each_lexicon(lexfile, release):
     x_all_order, y_all_order, lex_model= load_data(lexfile)
     x_all, y_all = shuffle(x_all_order, y_all_order, random_state=0)
-
-    VALIDATION_RATIO = 0.1
-    TEST_RATIO = 0.
-
     NUM_DATA = x_all.shape[0]
+
+    if release==0:
+        VALIDATION_RATIO = 0.1
+        TEST_RATIO = 0.2
+
+    else:
+        VALIDATION_RATIO = 0.1
+        TEST_RATIO = 0.
+
     VALIDATION_SIZE = int(NUM_DATA * VALIDATION_RATIO)
     TEST_SIZE = int(NUM_DATA * TEST_RATIO)
     TRAIN_SIZE = NUM_DATA - (VALIDATION_SIZE + TEST_SIZE)
+
 
     x_trn = x_all[0:TRAIN_SIZE]
     y_trn = y_all[0:TRAIN_SIZE]
@@ -182,8 +188,13 @@ def load_each_lexicon(lexfile):
     x_dev = x_all[TRAIN_SIZE:TRAIN_SIZE + VALIDATION_SIZE]
     y_dev = y_all[TRAIN_SIZE:TRAIN_SIZE + VALIDATION_SIZE]
 
-    x_tst = x_all[TRAIN_SIZE + VALIDATION_SIZE:]
-    y_tst = y_all[TRAIN_SIZE + VALIDATION_SIZE:]
+    if release == 0:
+        x_tst = x_all[TRAIN_SIZE + VALIDATION_SIZE:]
+        y_tst = y_all[TRAIN_SIZE + VALIDATION_SIZE:]
+
+    else:
+        x_tst = x_all[TRAIN_SIZE:TRAIN_SIZE + VALIDATION_SIZE]
+        y_tst = y_all[TRAIN_SIZE:TRAIN_SIZE + VALIDATION_SIZE]
 
 
     class Dataset(object):
@@ -258,6 +269,7 @@ def expand_lexicon(model_path, w2vdim, outputdim, dataset, w2vsource='twitter'):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--lexindex', default=0, choices=[0, 1, 2, 3, 4, 5, 6], type=int)
+    parser.add_argument('--release', default=0, choices=[0, 1], type=int)
 
     args = parser.parse_args()
     program = os.path.basename(sys.argv[0])
@@ -284,13 +296,13 @@ if __name__ == "__main__":
     lexfile = lexfile_list[lexindex]
     neg_output = range_neg[lexfile.replace('.pickle', '')]
 
-    print 'ADDITIONAL PARAMETER\n lexindex: %d\n lexfile: %s\n' % (args.lexindex, lexfile)
+    print 'ADDITIONAL PARAMETER\n lexindex: %d\n release: %d\n lexfile: %s\n' % (args.lexindex, args.release, lexfile)
 
 
 
     print 'train w2v to lex models for %s' % lexfile.replace('.pickle', '')
 
-    dataset = load_each_lexicon(lexfile)
+    dataset = load_each_lexicon(lexfile, args.release)
     x_dim = dataset.x_trn.shape[1]
     y_dim = dataset.y_trn.shape[1]
     NUM_DATA = dataset.x_trn.shape[0] + dataset.x_dev.shape[0] + dataset.x_tst.shape[0]
