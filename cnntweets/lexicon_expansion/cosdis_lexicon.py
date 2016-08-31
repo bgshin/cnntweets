@@ -53,7 +53,7 @@ if __name__ == "__main__":
 
 
     with Timer("splitting.."):
-        voca = w2vmodel.vocab.keys()[100]
+        voca = w2vmodel.vocab.keys()
         N_voca = len(voca)
         print 'num_voca', N_voca
 
