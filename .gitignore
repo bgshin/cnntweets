@@ -75,3 +75,4 @@ data
 w2v_lex_cnn/runs/
 cnntweets/runs/
 runs
+scratch.py
