@@ -540,6 +540,9 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                         index_at_max_af1_dev = current_step
                         af1_tst_at_max_af1_dev = curr_af1_tst
 
+                        path = saver.save(sess, checkpoint_prefix, global_step=current_step)
+                        print("Saved model checkpoint to {}\n".format(path))
+
                     print 'Status: [%d] Max f1 for dev (%f), Max f1 for tst (%f)\n' % (
                         index_at_max_af1_dev, max_af1_dev, af1_tst_at_max_af1_dev)
                     sys.stdout.flush()
