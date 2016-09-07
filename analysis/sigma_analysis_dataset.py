@@ -230,6 +230,9 @@ def load_model(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2vnum
                 pickle.dump(correct_obj, handle)
                 pickle.dump(correct_pos, handle)
 
+                pickle.dump(vs[-2], handle)
+
+
 
 
 
