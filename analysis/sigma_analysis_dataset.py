@@ -213,24 +213,32 @@ def load_model(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2vnum
             print len(index_neg), len(index_obj), len(index_pos)
             print len(pool_neg), len(pool_obj), len(pool_pos)
 
+
             with open('./sigma_analysis.pickle', 'wb') as handle:
-                pickle.dump(index_neg, handle)
-                pickle.dump(index_obj, handle)
-                pickle.dump(index_pos, handle)
-
-                pickle.dump(pool_neg, handle)
-                pickle.dump(pool_obj, handle)
-                pickle.dump(pool_pos, handle)
-
-                pickle.dump(pred_neg, handle)
-                pickle.dump(pred_obj, handle)
-                pickle.dump(pred_pos, handle)
-
-                pickle.dump(correct_neg, handle)
-                pickle.dump(correct_obj, handle)
-                pickle.dump(correct_pos, handle)
+                pickle.dump([index_neg, index_obj, index_pos], handle)
+                pickle.dump([pool_neg, pool_obj, pool_pos] , handle)
+                pickle.dump([pred_neg, pred_obj, pred_pos] , handle)
+                pickle.dump([correct_neg, correct_obj, correct_pos] , handle)
 
                 pickle.dump(vs[-2], handle)
+
+                # pickle.dump(index_neg, handle)
+                # pickle.dump(index_obj, handle)
+                # pickle.dump(index_pos, handle)
+                #
+                # pickle.dump(pool_neg, handle)
+                # pickle.dump(pool_obj, handle)
+                # pickle.dump(pool_pos, handle)
+                #
+                # pickle.dump(pred_neg, handle)
+                # pickle.dump(pred_obj, handle)
+                # pickle.dump(pred_pos, handle)
+                #
+                # pickle.dump(correct_neg, handle)
+                # pickle.dump(correct_obj, handle)
+                # pickle.dump(correct_pos, handle)
+                #
+                # pickle.dump(vs[-2], handle)
 
 
 
