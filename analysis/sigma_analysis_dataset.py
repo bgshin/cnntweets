@@ -186,7 +186,7 @@ def load_model(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2vnum
             score_neg = []
             b_neg = []
             for idx in range(len(x_test_neg)):
-                h_pool_flat, prediction, correct, _b, score = \
+                h_pool_flat, prediction, _b, score, correct = \
                     dev_step(tuple([x_test_neg[idx]]), tuple([y_test_neg[idx]]), tuple([x_lex_test_neg[idx]]))
                 pool_neg.append(h_pool_flat)
                 pred_neg.append(prediction)
@@ -200,7 +200,7 @@ def load_model(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2vnum
             score_obj = []
             b_obj = []
             for idx in range(len(x_test_obj)):
-                h_pool_flat, prediction, correct, _b, score = \
+                h_pool_flat, prediction, _b, score, correct = \
                     dev_step(tuple([x_test_obj[idx]]), tuple([y_test_obj[idx]]), tuple([x_lex_test_obj[idx]]))
                 pool_obj.append(h_pool_flat)
                 pred_obj.append(prediction)
@@ -214,7 +214,7 @@ def load_model(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2vnum
             score_pos = []
             b_pos = []
             for idx in range(len(x_test_pos)):
-                h_pool_flat, prediction, correct, _b, score = \
+                h_pool_flat, prediction, _b, score, correct = \
                     dev_step(tuple([x_test_pos[idx]]), tuple([y_test_pos[idx]]), tuple([x_lex_test_pos[idx]]))
                 pool_pos.append(h_pool_flat)
                 pred_pos.append(prediction)
