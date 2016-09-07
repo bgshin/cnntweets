@@ -171,44 +171,56 @@ def load_model(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2vnum
                     cnn.dropout_keep_prob: 1.0
                 }
 
-                accuracy, h_pool, h_pool_flat, predictions = sess.run(
-                    [ cnn.accuracy, cnn.h_pool, cnn.h_pool_flat, cnn.predictions],
+                accuracy, h_pool, h_pool_flat, predictions, _b, scores = sess.run(
+                    [ cnn.accuracy, cnn.h_pool, cnn.h_pool_flat, cnn.predictions, cnn._b, cnn.scores],
                     feed_dict)
 
                 if accuracy==0:
-                    return h_pool_flat[0], predictions[0], False
+                    return h_pool_flat[0], predictions[0], _b, scores, False
 
-                return h_pool_flat[0], predictions[0], True
+                return h_pool_flat[0], predictions[0], _b, scores, True
 
             pool_neg = []
             pred_neg = []
             correct_neg = []
+            score_neg = []
+            b_neg = []
             for idx in range(len(x_test_neg)):
-                h_pool_flat, prediction, correct = \
+                h_pool_flat, prediction, correct, _b, score = \
                     dev_step(tuple([x_test_neg[idx]]), tuple([y_test_neg[idx]]), tuple([x_lex_test_neg[idx]]))
                 pool_neg.append(h_pool_flat)
                 pred_neg.append(prediction)
                 correct_neg.append(correct)
+                score_neg.append(score)
+                b_neg.append(_b)
 
             pool_obj = []
             pred_obj = []
             correct_obj = []
+            score_obj = []
+            b_obj = []
             for idx in range(len(x_test_obj)):
-                h_pool_flat, prediction, correct = \
+                h_pool_flat, prediction, correct, _b, score = \
                     dev_step(tuple([x_test_obj[idx]]), tuple([y_test_obj[idx]]), tuple([x_lex_test_obj[idx]]))
                 pool_obj.append(h_pool_flat)
                 pred_obj.append(prediction)
                 correct_obj.append(correct)
+                score_obj.append(score)
+                b_obj.append(_b)
 
             pool_pos = []
             pred_pos = []
             correct_pos = []
+            score_pos = []
+            b_pos = []
             for idx in range(len(x_test_pos)):
-                h_pool_flat, prediction, correct = \
+                h_pool_flat, prediction, correct, _b, score = \
                     dev_step(tuple([x_test_pos[idx]]), tuple([y_test_pos[idx]]), tuple([x_lex_test_pos[idx]]))
                 pool_pos.append(h_pool_flat)
                 pred_pos.append(prediction)
                 correct_pos.append(correct)
+                score_pos.append(score)
+                b_pos.append(_b)
 
             print len(index_neg), len(index_obj), len(index_pos)
             print len(pool_neg), len(pool_obj), len(pool_pos)
@@ -219,6 +231,8 @@ def load_model(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2vnum
                 pickle.dump([pool_neg, pool_obj, pool_pos] , handle)
                 pickle.dump([pred_neg, pred_obj, pred_pos] , handle)
                 pickle.dump([correct_neg, correct_obj, correct_pos] , handle)
+                pickle.dump([score_neg, score_obj, score_pos], handle)
+                pickle.dump([b_neg, b_obj, b_pos], handle)
 
                 pickle.dump(vs[-2], handle)
 
