@@ -36,7 +36,7 @@ print("\nParameters:")
 for attr, value in sorted(FLAGS.__flags.items()):
     print("{}={}".format(attr.upper(), value))
 print("")
-os.system('cls' if os.name == 'nt' else 'clear')
+# os.system('cls' if os.name == 'nt' else 'clear')
 
 
 
@@ -152,8 +152,13 @@ def load_lexicon_unigram(lexdim):
 
         norm_model[index] = dictionary
 
-        with open(data_type+'.pickle', 'wb') as handle:
+
+    for index in range(7):
+        with open(data_type.replace('txt','')+'pickle', 'wb') as handle:
             pickle.dump(norm_model[index], handle)
+
+    with open('all.pickle', 'wb') as handle:
+        pickle.dump(norm_model, handle)
 
     return norm_model
 
