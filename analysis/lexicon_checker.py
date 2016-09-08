@@ -152,7 +152,9 @@ def checker():
             b = np.array(unigram_lexicon_model2[idx][key])
             if np.sum(a-b)>0.0001:
                 print key,np.sum(a-b), a, b
-        print ii
+
+        print unigram_lexicon_model1[idx]["<PAD/>"], unigram_lexicon_model2[idx]["<PAD/>"],
+        # print ii
         # print unigram_lexicon_model1[i]['good'], unigram_lexicon_model2[i]['good']
 
     print 'h'
