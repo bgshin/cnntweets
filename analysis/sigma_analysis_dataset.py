@@ -43,6 +43,115 @@ os.system('cls' if os.name == 'nt' else 'clear')
 # Data Preparatopn
 # ==================================================
 
+def load_lexicon_unigram(lexdim):
+    if lexdim==6:
+        default_vector_dic = {'EverythingUnigramsPMIHS.txt': [0],
+                              'HS-AFFLEX-NEGLEX-unigrams.txt': [0],
+                              'Maxdiff-Twitter-Lexicon_0to1.txt': [0.5],
+                              'S140-AFFLEX-NEGLEX-unigrams.txt': [0],
+                              'unigrams-pmilexicon.txt': [0],
+                              'unigrams-pmilexicon_sentiment_140.txt': [0]}
+
+    elif lexdim == 2:
+        default_vector_dic = {'EverythingUnigramsPMIHS.txt': [0],
+                              'unigrams-pmilexicon.txt': [0]}
+
+    elif lexdim == 4:
+        default_vector_dic = {'EverythingUnigramsPMIHS.txt': [0],
+                              'unigrams-pmilexicon.txt': [0, 0, 0]}
+
+    elif lexdim == 15:
+        default_vector_dic = {'EverythingUnigramsPMIHS.txt':[0],
+                          'HS-AFFLEX-NEGLEX-unigrams.txt':[0,0,0],
+                          'Maxdiff-Twitter-Lexicon_0to1.txt':[0.5],
+                          'S140-AFFLEX-NEGLEX-unigrams.txt':[0,0,0],
+                          'unigrams-pmilexicon.txt':[0,0,0],
+                          'unigrams-pmilexicon_sentiment_140.txt':[0,0,0],
+                          'BL.txt': [0]}
+    else:
+        default_vector_dic = {'EverythingUnigramsPMIHS.txt':[0],
+                          'HS-AFFLEX-NEGLEX-unigrams.txt':[0,0,0],
+                          'Maxdiff-Twitter-Lexicon_0to1.txt':[0.5],
+                          'S140-AFFLEX-NEGLEX-unigrams.txt':[0,0,0],
+                          'unigrams-pmilexicon.txt':[0,0,0],
+                          'unigrams-pmilexicon_sentiment_140.txt':[0,0,0],
+                          'BL.txt': [0]}
+
+    file_path = ["../data/lexicon_data/"+files for files in os.listdir("../data/lexicon_data") if files.endswith(".txt")]
+    if lexdim == 2 or lexdim == 4:
+        raw_model = [dict() for x in range(2)]
+        norm_model = [dict() for x in range(2)]
+        file_path = ['../data/lexicon_data/EverythingUnigramsPMIHS.txt', '../data/lexicon_data/unigrams-pmilexicon.txt']
+    else:
+        raw_model = [dict() for x in range(len(file_path))]
+        norm_model = [dict() for x in range(len(file_path))]
+
+    for index, each_model in enumerate(raw_model):
+        data_type = file_path[index].replace("../data/lexicon_data/", "")
+        # if lexdim == 2 or lexdim == 4:
+        #     if data_type not in ['EverythingUnigramsPMIHS.txt', 'unigrams-pmilexicon.txt']:
+        #         continue
+
+        default_vector = default_vector_dic[data_type]
+
+        # print data_type, default_vector
+        raw_model[index]["<PAD/>"] = default_vector
+
+        with open(file_path[index], 'r') as document:
+            for line in document:
+                line_token = re.split(r'\t', line)
+
+                data_vec=[]
+                key=''
+
+                if lexdim == 2 or lexdim == 6:
+                    for idx, tk in enumerate(line_token):
+                        if idx == 0:
+                            key = tk
+
+                        elif idx == 1:
+                            data_vec.append(float(tk))
+
+                        else:
+                            continue
+
+                else: # 4 or 14
+                    for idx, tk in enumerate(line_token):
+                        if idx == 0:
+                            key = tk
+                        else:
+                            try:
+                                data_vec.append(float(tk))
+                            except:
+                                pass
+
+
+                assert(key != '')
+                each_model[key] = data_vec
+
+    for index, each_model in enumerate(norm_model):
+    # for m in range(len(raw_model)):
+        values = np.array(raw_model[index].values())
+        new_val = np.copy(values)
+
+
+        #print 'model %d' % index
+        for i in range(len(raw_model[index].values()[0])):
+            pos = np.max(values, axis=0)[i]
+            neg = np.min(values, axis=0)[i]
+            mmax = max(abs(pos), abs(neg))
+            #print pos, neg, mmax
+
+            new_val[:, i] = values[:, i] / mmax
+
+        keys = raw_model[index].keys()
+        dictionary = dict(zip(keys, new_val))
+
+        norm_model[index] = dictionary
+
+
+    return norm_model
+
 
 def load_w2v(w2vdim):
     fname = '../data/emory_w2v/w2v-%d.bin' % w2vdim
@@ -84,7 +193,9 @@ def load_dataset(w2vdim, max_len):
         w2vmodel = load_w2v(w2vdim)
 
     with Timer("loading lex..."):
-        unigram_lexicon_model = load_lex()
+        # unigram_lexicon_model = load_lex()
+
+        unigram_lexicon_model = load_lexicon_unigram(15)
 
     with Timer("loading test dataset..."):
         x_test, y_test, x_lex_test = cnn_data_helpers.load_data('tst', w2vmodel, unigram_lexicon_model, max_len)
@@ -182,23 +293,14 @@ def load_model(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2vnum
                 return h_pool_flat[0], predictions[0], _b, scores, True
 
             def test_step(x_batch, y_batch, x_batch_lex=None):
-                """
-                Evaluates model on a test set
-                """
-                if x_batch_lex != None:
-                    feed_dict = {
-                        cnn.input_x: x_batch,
-                        cnn.input_y: y_batch,
-                        # lexicon
-                        cnn.input_x_lexicon: x_batch_lex,
-                        cnn.dropout_keep_prob: 1.0
-                    }
-                else:
-                    feed_dict = {
-                        cnn.input_x: x_batch,
-                        cnn.input_y: y_batch,
-                        cnn.dropout_keep_prob: 1.0
-                    }
+                feed_dict = {
+                    cnn.input_x: x_batch,
+                    cnn.input_y: y_batch,
+                    # lexicon
+                    cnn.input_x_lexicon: x_batch_lex,
+                    cnn.dropout_keep_prob: 1.0
+                }
+
                 loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1 = sess.run(
                     [cnn.loss, cnn.accuracy,
                      cnn.neg_r, cnn.neg_p, cnn.f1_neg, cnn.f1_pos, cnn.avg_f1],
