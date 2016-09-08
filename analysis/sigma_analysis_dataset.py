@@ -185,6 +185,7 @@ def load_model(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2vnum
             correct_neg = []
             score_neg = []
             b_neg = []
+            gold_neg = []
             for idx in range(len(x_test_neg)):
                 h_pool_flat, prediction, _b, score, correct = \
                     dev_step(tuple([x_test_neg[idx]]), tuple([y_test_neg[idx]]), tuple([x_lex_test_neg[idx]]))
@@ -193,12 +194,14 @@ def load_model(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2vnum
                 correct_neg.append(correct)
                 score_neg.append(score)
                 b_neg.append(_b)
+                gold_neg.append(y_test_neg[idx])
 
             pool_obj = []
             pred_obj = []
             correct_obj = []
             score_obj = []
             b_obj = []
+            gold_obj = []
             for idx in range(len(x_test_obj)):
                 h_pool_flat, prediction, _b, score, correct = \
                     dev_step(tuple([x_test_obj[idx]]), tuple([y_test_obj[idx]]), tuple([x_lex_test_obj[idx]]))
@@ -207,12 +210,14 @@ def load_model(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2vnum
                 correct_obj.append(correct)
                 score_obj.append(score)
                 b_obj.append(_b)
+                gold_obj.append(y_test_obj[idx])
 
             pool_pos = []
             pred_pos = []
             correct_pos = []
             score_pos = []
             b_pos = []
+            gold_pos = []
             for idx in range(len(x_test_pos)):
                 h_pool_flat, prediction, _b, score, correct = \
                     dev_step(tuple([x_test_pos[idx]]), tuple([y_test_pos[idx]]), tuple([x_lex_test_pos[idx]]))
@@ -221,6 +226,7 @@ def load_model(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2vnum
                 correct_pos.append(correct)
                 score_pos.append(score)
                 b_pos.append(_b)
+                gold_pos.append(y_test_pos[idx])
 
             print len(index_neg), len(index_obj), len(index_pos)
             print len(pool_neg), len(pool_obj), len(pool_pos)
@@ -233,6 +239,8 @@ def load_model(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2vnum
                 pickle.dump([correct_neg, correct_obj, correct_pos] , handle)
                 pickle.dump([score_neg, score_obj, score_pos], handle)
                 pickle.dump([b_neg, b_obj, b_pos], handle)
+                pickle.dump([gold_neg, gold_obj, gold_pos], handle)
+
 
                 pickle.dump(vs[-2], handle)
 
