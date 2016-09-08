@@ -2,7 +2,7 @@
 
 import tensorflow as tf
 import numpy as np
-import argparse
+import re
 import os
 from cnntweets.utils import cnn_data_helpers
 from cnntweets.cnn_models.w2v_lex_cnn import W2V_LEX_CNN
