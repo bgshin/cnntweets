@@ -86,8 +86,10 @@ def load_lexicon_unigram(lexdim):
         raw_model = [dict() for x in range(len(file_path))]
         norm_model = [dict() for x in range(len(file_path))]
 
+    data_type_list = []
     for index, each_model in enumerate(raw_model):
         data_type = file_path[index].replace("../data/lexicon_data/", "")
+        data_type_list.append(data_type)
         # if lexdim == 2 or lexdim == 4:
         #     if data_type not in ['EverythingUnigramsPMIHS.txt', 'unigrams-pmilexicon.txt']:
         #         continue
@@ -130,6 +132,7 @@ def load_lexicon_unigram(lexdim):
                 each_model[key] = data_vec
 
     for index, each_model in enumerate(norm_model):
+        data_type = data_type_list[index]
     # for m in range(len(raw_model)):
         values = np.array(raw_model[index].values())
         new_val = np.copy(values)
@@ -149,6 +152,8 @@ def load_lexicon_unigram(lexdim):
 
         norm_model[index] = dictionary
 
+        with open(data_type+'.pickle', 'wb') as handle:
+            pickle.dump(norm_model[index])
 
     return norm_model
 
