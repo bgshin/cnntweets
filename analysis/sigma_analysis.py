@@ -11,8 +11,17 @@ with Timer('loading anal data...'):
         correct_list = pickle.load(handle)
         score_list = pickle.load(handle)
         b_list = pickle.load(handle)
+        gold_list = pickle.load(handle)
 
         softmax_weight_list = pickle.load(handle)
+
+with Timer('loading anal data...'):
+    template_txt = '../data/tweets/txt/%s'
+    pathtxt = template_txt % 'tst'
+
+    x_text=[line.split('\t')[2] for line in open(pathtxt, "r").readlines()]
+
+
 
 
 def get_average(pool, w2v=True):
@@ -57,17 +66,43 @@ def process_one_class(cls):
 
     idx = 0
 
-    for idx in range(len(pool)):
-        print idx
-        if correct_list[cls][idx]==True:
-            evaluate_data(pool[0:,0:4*32][idx], pool[0:,4*32:][idx],
-                          softmax_weight_w2v, softmax_weight_lex,
-                          b_list[cls][idx], score_list[cls][idx][0])
+    for target in range(3):
+        w2vsum_list = []
+        lexsum_list = []
+        idx_list = []
+        for idx in range(len(pool)):
+            # print idx
+            if correct_list[cls][idx]==True:
+                # evaluate_data(pool[0:,0:4*32][idx], pool[0:,4*32:][idx],
+                #               softmax_weight_w2v, softmax_weight_lex,
+                #               b_list[cls][idx], score_list[cls][idx][0])
 
-            score_list[cls][idx][0]
-            get_each_sum(pool[0:,0:4*32][idx], pool[0:,4*32:][idx],
-                          softmax_weight_w2v, softmax_weight_lex,
-                         cls)
+                # gold = cls
+                w2vsum, lexsum = get_each_sum(pool[0:,0:4*32][idx], pool[0:,4*32:][idx],
+                              softmax_weight_w2v, softmax_weight_lex,
+                             target)
+
+                w2vsum_list.append(w2vsum)
+                lexsum_list.append(lexsum)
+                idx_list.append(idx)
+
+        print map(int, correct_list[target]).count(0), map(int, correct_list[target]).count(1)
+        print map(int, correct_list[target]).count(1)*1.0/len(correct_list[target])
+        print target, len(pool), len(w2vsum_list), len(lexsum_list)
+        print '%f\t%f\t%f\t%f' % (np.mean(w2vsum_list), np.std(w2vsum_list), np.max(w2vsum_list), np.min(w2vsum_list))
+        print '%f\t%f\t%f\t%f' % (np.mean(lexsum_list), np.std(lexsum_list), np.max(lexsum_list), np.min(lexsum_list))
+        # map(int, w2vsum_list> (np.mean(w2vsum_list)+np.std(w2vsum_list)))
+
+        # map(int, w2vsum_list > (np.mean(w2vsum_list) + 3.1 * np.std(w2vsum_list))).count(1)<=10
+        # selected_idx = np.where((w2vsum_list > (np.mean(w2vsum_list) + 3.1 * np.std(w2vsum_list))) == True)
+        # selected_index = np.array(idx_list)[selected_idx]
+        # big_w2v_index = index_list[cls][selected_index]
+        # print np.array(x_text)[big_w2v_index]
+        #
+        # selected_idx = np.where((lexsum_list > (np.mean(lexsum_list) + 2.9 * np.std(lexsum_list))) == True)
+        # selected_index = np.array(idx_list)[selected_idx]
+        # big_lex_index = index_list[cls][selected_index]
+        # print np.array(x_text)[big_lex_index]
 
 
     # print avg_w2v[0:10]

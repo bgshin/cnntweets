@@ -79,7 +79,7 @@ def load_lex():
 
     return norm_model
 
-def load_dataset():
+def load_dataset(w2vdim, max_len):
     with Timer("loading w2v..."):
         w2vmodel = load_w2v(w2vdim)
 
@@ -175,10 +175,36 @@ def load_model(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2vnum
                     [ cnn.accuracy, cnn.h_pool, cnn.h_pool_flat, cnn.predictions, cnn._b, cnn.scores],
                     feed_dict)
 
+
                 if accuracy==0:
                     return h_pool_flat[0], predictions[0], _b, scores, False
 
                 return h_pool_flat[0], predictions[0], _b, scores, True
+
+            def test_step(x_batch, y_batch, x_batch_lex=None):
+                """
+                Evaluates model on a test set
+                """
+                if x_batch_lex != None:
+                    feed_dict = {
+                        cnn.input_x: x_batch,
+                        cnn.input_y: y_batch,
+                        # lexicon
+                        cnn.input_x_lexicon: x_batch_lex,
+                        cnn.dropout_keep_prob: 1.0
+                    }
+                else:
+                    feed_dict = {
+                        cnn.input_x: x_batch,
+                        cnn.input_y: y_batch,
+                        cnn.dropout_keep_prob: 1.0
+                    }
+                loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1 = sess.run(
+                    [cnn.loss, cnn.accuracy,
+                     cnn.neg_r, cnn.neg_p, cnn.f1_neg, cnn.f1_pos, cnn.avg_f1],
+                    feed_dict)
+
+                return accuracy
 
             pool_neg = []
             pred_neg = []
@@ -244,6 +270,9 @@ def load_model(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2vnum
 
                 pickle.dump(vs[-2], handle)
 
+            acc = test_step(x_test, y_test, x_lex_test)
+            print 'acc=%f' % acc
+
                 # pickle.dump(index_neg, handle)
                 # pickle.dump(index_obj, handle)
                 # pickle.dump(index_pos, handle)
@@ -283,7 +312,7 @@ if __name__ == "__main__":
     y_test=[]
     x_lex_test=[]
 
-    x_test, y_test, x_lex_test = load_dataset()
+    x_test, y_test, x_lex_test = load_dataset(w2vdim, max_len)
     load_model(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2vnumfilters)
 
 
