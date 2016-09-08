@@ -153,7 +153,7 @@ def load_lexicon_unigram(lexdim):
         norm_model[index] = dictionary
 
         with open(data_type+'.pickle', 'wb') as handle:
-            pickle.dump(norm_model[index])
+            pickle.dump(norm_model[index], handle)
 
     return norm_model
 
