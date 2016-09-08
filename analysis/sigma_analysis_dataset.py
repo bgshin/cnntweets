@@ -187,7 +187,7 @@ def load_lex():
     norm_model = []
 
     for idx, lexfile in enumerate(lexfile_list):
-        fname = '../data/le/%s' % lexfile
+        fname = '../data/le/new/%s' % lexfile
 
         with open(fname, 'rb') as handle:
             each_model = pickle.load(handle)
@@ -203,9 +203,8 @@ def load_dataset(w2vdim, max_len):
         w2vmodel = load_w2v(w2vdim)
 
     with Timer("loading lex..."):
-        # unigram_lexicon_model = load_lex()
-
-        unigram_lexicon_model = load_lexicon_unigram(15)
+        unigram_lexicon_model = load_lex()
+        # unigram_lexicon_model = load_lexicon_unigram(15)
 
     with Timer("loading test dataset..."):
         x_test, y_test, x_lex_test = cnn_data_helpers.load_data('tst', w2vmodel, unigram_lexicon_model, max_len)

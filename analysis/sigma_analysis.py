@@ -20,6 +20,7 @@ with Timer('loading anal data...'):
     pathtxt = template_txt % 'tst'
 
     x_text=[line.split('\t')[2] for line in open(pathtxt, "r").readlines()]
+    x_sentiment=[line.split('\t')[1] for line in open(pathtxt, "r").readlines()]
 
 
 
@@ -93,16 +94,29 @@ def process_one_class(cls):
         print '%f\t%f\t%f\t%f' % (np.mean(lexsum_list), np.std(lexsum_list), np.max(lexsum_list), np.min(lexsum_list))
         # map(int, w2vsum_list> (np.mean(w2vsum_list)+np.std(w2vsum_list)))
 
-        # map(int, w2vsum_list > (np.mean(w2vsum_list) + 3.1 * np.std(w2vsum_list))).count(1)<=10
-        # selected_idx = np.where((w2vsum_list > (np.mean(w2vsum_list) + 3.1 * np.std(w2vsum_list))) == True)
-        # selected_index = np.array(idx_list)[selected_idx]
-        # big_w2v_index = index_list[cls][selected_index]
-        # print np.array(x_text)[big_w2v_index]
-        #
-        # selected_idx = np.where((lexsum_list > (np.mean(lexsum_list) + 2.9 * np.std(lexsum_list))) == True)
-        # selected_index = np.array(idx_list)[selected_idx]
-        # big_lex_index = index_list[cls][selected_index]
-        # print np.array(x_text)[big_lex_index]
+    alpha_list = [i / 50.0 for i in range(50, 500)]
+    for alpha in alpha_list:
+        if map(int, w2vsum_list > (np.mean(w2vsum_list) + alpha * np.std(w2vsum_list))).count(1)<=10:
+            print 'num', map(int, w2vsum_list > (np.mean(w2vsum_list) + alpha * np.std(w2vsum_list))).count(1)
+            selected_idx = np.where((w2vsum_list > (np.mean(w2vsum_list) + alpha * np.std(w2vsum_list))) == True)
+            selected_index = np.array(idx_list)[selected_idx]
+            big_w2v_index = index_list[cls][selected_index]
+
+            print np.array(x_sentiment)[big_w2v_index]
+            print np.array(x_text)[big_w2v_index]
+            break
+
+    for alpha in alpha_list:
+        if map(int, lexsum_list > (np.mean(lexsum_list) + alpha * np.std(lexsum_list))).count(1) <= 10:
+            print 'num', map(int, lexsum_list > (np.mean(lexsum_list) + alpha * np.std(lexsum_list))).count(1)
+            selected_idx = np.where((lexsum_list > (np.mean(lexsum_list) + alpha * np.std(lexsum_list))) == True)
+            selected_index = np.array(idx_list)[selected_idx]
+            big_lex_index = index_list[cls][selected_index]
+            print np.array(x_sentiment)[big_lex_index]
+            print np.array(x_text)[big_lex_index]
+            break
+
+
 
 
     # print avg_w2v[0:10]
