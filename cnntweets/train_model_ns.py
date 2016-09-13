@@ -44,7 +44,7 @@ print("\nParameters:")
 for attr, value in sorted(FLAGS.__flags.items()):
     print("{}={}".format(attr.upper(), value))
 print("")
-os.system('cls' if os.name == 'nt' else 'clear')
+# os.system('cls' if os.name == 'nt' else 'clear')
 
 
 def load_w2v2(w2vdim, simple_run=True, base_path='../data/emory_w2v/'):
@@ -271,24 +271,27 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
         # WORD2VEC
         x_text, y = cnn_data_helpers.load_data_trainable("trn", rottenTomato=use_rotten_tomato)
         max_document_length = max([len(x.split(" ")) for x in x_text])
-        vocab_processor = learn.preprocessing.VocabularyProcessor(max_document_length)
+        vocab_processor = learn.preprocessing.VocabularyProcessor(max_len)
         total_vocab_size = len(vocab_processor.vocabulary_)
+
+
+        print 'max_document_length: %d, my_len: %d' % (max_document_length, max_len)
 
         if simple_run:
             x_train, y_train = cnn_data_helpers.load_data_trainable("trn_sample", rottenTomato=use_rotten_tomato)
-            x_lex_train = cnn_data_helpers.build_lex_data(x_train)
+            x_lex_train = cnn_data_helpers.build_lex_data(x_train, unigram_lexicon_model)
             x_dev, y_dev = cnn_data_helpers.load_data_trainable("dev_sample", rottenTomato=use_rotten_tomato)
-            x_lex_dev = cnn_data_helpers.build_lex_data(x_dev)
+            x_lex_dev = cnn_data_helpers.build_lex_data(x_dev, unigram_lexicon_model)
             x_test, y_test = cnn_data_helpers.load_data_trainable("tst_sample", rottenTomato=use_rotten_tomato)
-            x_lex_test = cnn_data_helpers.build_lex_data(x_test)
+            x_lex_test = cnn_data_helpers.build_lex_data(x_test, unigram_lexicon_model)
 
         else:
             x_train, y_train = cnn_data_helpers.load_data_trainable("trn", rottenTomato=use_rotten_tomato)
-            x_lex_train = cnn_data_helpers.build_lex_data(x_train)
+            x_lex_train = cnn_data_helpers.build_lex_data(x_train, unigram_lexicon_model)
             x_dev, y_dev = cnn_data_helpers.load_data_trainable("dev", rottenTomato=use_rotten_tomato)
-            x_lex_dev = cnn_data_helpers.build_lex_data(x_dev)
+            x_lex_dev = cnn_data_helpers.build_lex_data(x_dev, unigram_lexicon_model)
             x_test, y_test = cnn_data_helpers.load_data_trainable("tst", rottenTomato=use_rotten_tomato)
-            x_lex_test = cnn_data_helpers.build_lex_data(x_test)
+            x_lex_test = cnn_data_helpers.build_lex_data(x_test, unigram_lexicon_model)
 
         x_train = np.array(list(vocab_processor.fit_transform(x_train)))
         x_dev = np.array(list(vocab_processor.fit_transform(x_dev)))
