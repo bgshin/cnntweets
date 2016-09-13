@@ -46,35 +46,6 @@ for attr, value in sorted(FLAGS.__flags.items()):
 print("")
 # os.system('cls' if os.name == 'nt' else 'clear')
 
-
-def load_w2v2(w2vdim, simple_run=True, base_path='../data/emory_w2v/'):
-    if simple_run:
-        return {'a': np.array([np.float32(0.0)] * w2vdim)}
-
-    else:
-        model_path = base_path + 'w2v-%d.bin' % w2vdim
-        model = Word2Vec.load_word2vec_format(model_path, binary=True)
-        print("The vocabulary size is: " + str(len(model.vocab)))
-
-        return model
-
-
-def load_w2v(w2vdim, simple_run=True, source="twitter"):
-    if simple_run:
-        return {'a': np.array([np.float32(0.0)] * w2vdim)}
-
-    else:
-        if source == "twitter":
-            model_path = '../data/emory_w2v/w2v-%d.bin' % w2vdim
-        elif source == "amazon":
-            model_path = '../data/emory_w2v/w2v-%d-%s.bin' % (w2vdim, source)
-
-        model = Word2Vec.load_word2vec_format(model_path, binary=True)
-        print("The vocabulary size is: " + str(len(model.vocab)))
-
-        return model
-
-
 def load_lexicon_unigram(lexdim):
     if lexdim == 6:
         default_vector_dic = {'EverythingUnigramsPMIHS.txt': [0],
@@ -242,11 +213,9 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                     each_model["<PAD/>"] = default_vector
                     norm_model.append(each_model)
 
-    with Timer("w2v"):
-        if w2vsource == "twitter":
-            w2vmodel = load_w2v(w2vdim, simple_run=simple_run)
-        else:
-            w2vmodel = load_w2v(w2vdim, simple_run=simple_run)
+    # with Timer("w2v"):
+    #     w2vmodel = load_w2v(w2vdim, source=w2vsource, simple_run=simple_run)
+
 
     unigram_lexicon_model = norm_model
     # unigram_lexicon_model = raw_model
@@ -268,36 +237,38 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
         index_at_max_af1_dev = 0
         af1_tst_at_max_af1_dev = 0
 
-        # WORD2VEC
-        x_text, y = cnn_data_helpers.load_data_trainable("trn", rottenTomato=use_rotten_tomato)
-        max_document_length = max([len(x.split(" ")) for x in x_text])
-        vocab_processor = learn.preprocessing.VocabularyProcessor(max_document_length)
-        total_vocab_size = len(vocab_processor.vocabulary_)
-
-
-        print 'max_document_length: %d, my_len: %d' % (max_document_length, max_len)
-
-        if simple_run:
-            x_train, y_train = cnn_data_helpers.load_data_trainable("trn_sample", rottenTomato=use_rotten_tomato)
-            x_lex_train = cnn_data_helpers.build_lex_data(x_train, unigram_lexicon_model)
-            x_dev, y_dev = cnn_data_helpers.load_data_trainable("dev_sample", rottenTomato=use_rotten_tomato)
-            x_lex_dev = cnn_data_helpers.build_lex_data(x_dev, unigram_lexicon_model)
-            x_test, y_test = cnn_data_helpers.load_data_trainable("tst_sample", rottenTomato=use_rotten_tomato)
-            x_lex_test = cnn_data_helpers.build_lex_data(x_test, unigram_lexicon_model)
-
-        else:
+        with Timer("loading datasets..."):
+            # WORD2VEC
             x_train, y_train = cnn_data_helpers.load_data_trainable("trn", rottenTomato=use_rotten_tomato)
-            x_lex_train = cnn_data_helpers.build_lex_data(x_train, unigram_lexicon_model)
-            x_dev, y_dev = cnn_data_helpers.load_data_trainable("dev", rottenTomato=use_rotten_tomato)
-            x_lex_dev = cnn_data_helpers.build_lex_data(x_dev, unigram_lexicon_model)
-            x_test, y_test = cnn_data_helpers.load_data_trainable("tst", rottenTomato=use_rotten_tomato)
-            x_lex_test = cnn_data_helpers.build_lex_data(x_test, unigram_lexicon_model)
+            max_document_length = max([len(x.split(" ")) for x in x_train])
+            vocab_processor = learn.preprocessing.VocabularyProcessor(max_document_length)
+            vocab_processor.fit_transform(x_train)
+            total_vocab_size = len(vocab_processor.vocabulary_._freq)
 
-        x_train = np.array(list(vocab_processor.fit_transform(x_train)))
-        x_dev = np.array(list(vocab_processor.fit_transform(x_dev)))
-        x_test = np.array(list(vocab_processor.fit_transform(x_test)))
 
-        del (w2vmodel)
+            print 'max_document_length: %d, my_len: %d, total_vocab_size:%d' % (max_document_length, max_len, total_vocab_size)
+
+            if simple_run:
+                x_train, y_train = cnn_data_helpers.load_data_trainable("trn_sample", rottenTomato=use_rotten_tomato)
+                x_lex_train = cnn_data_helpers.build_lex_data(x_train, unigram_lexicon_model)
+                x_dev, y_dev = cnn_data_helpers.load_data_trainable("dev_sample", rottenTomato=use_rotten_tomato)
+                x_lex_dev = cnn_data_helpers.build_lex_data(x_dev, unigram_lexicon_model)
+                x_test, y_test = cnn_data_helpers.load_data_trainable("tst_sample", rottenTomato=use_rotten_tomato)
+                x_lex_test = cnn_data_helpers.build_lex_data(x_test, unigram_lexicon_model)
+
+            else:
+                # x_train, y_train = cnn_data_helpers.load_data_trainable("trn", rottenTomato=use_rotten_tomato)
+                x_lex_train = cnn_data_helpers.build_lex_data(x_train, unigram_lexicon_model)
+                x_dev, y_dev = cnn_data_helpers.load_data_trainable("dev", rottenTomato=use_rotten_tomato)
+                x_lex_dev = cnn_data_helpers.build_lex_data(x_dev, unigram_lexicon_model)
+                x_test, y_test = cnn_data_helpers.load_data_trainable("tst", rottenTomato=use_rotten_tomato)
+                x_lex_test = cnn_data_helpers.build_lex_data(x_test, unigram_lexicon_model)
+
+            x_train = np.array(list(vocab_processor.fit_transform(x_train)))
+            x_dev = np.array(list(vocab_processor.fit_transform(x_dev)))
+            x_test = np.array(list(vocab_processor.fit_transform(x_test)))
+
+        # del (w2vmodel)
         del (norm_model)
         # del(raw_model)
         gc.collect()
