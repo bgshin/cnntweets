@@ -72,6 +72,54 @@ def load_data_and_labels(dataset, rottenTomato=False):
     return [x_text, y]
 
 
+def load_data_trainable(dataset, rottenTomato=False):
+    """
+    Loads MR polarity data from files, splits the data into words and generates labels.
+    Returns split sentences and labels.
+    """
+    # Load data from files
+    if rottenTomato:
+        template_txt = '../data/rt-data-nlp4jtok/%s'
+    else:
+        template_txt = '../data/tweets/txt/%s'
+
+    pathtxt = template_txt % dataset
+
+    x_text=[line.split('\t')[2] for line in open(pathtxt, "r").readlines()]
+    x_text = [sent for sent in x_text]
+
+    y = []
+    if rottenTomato:
+        for line in open(pathtxt, "r").readlines():
+            senti=line.split('\t')[1]
+            if  senti == 'neutral':
+                y.append([0, 0, 1, 0, 0])
+
+            elif senti == 'positive':
+                y.append([0, 0, 0, 1, 0])
+            elif senti == 'very_positive':
+                y.append([0, 0, 0, 0 ,1])
+            elif senti == 'negative':
+                y.append([0, 1, 0, 0 ,0])
+            elif senti == 'very_negative':
+                y.append([1, 0, 0, 0 ,0])
+
+    else:
+        for line in open(pathtxt, "r").readlines():
+            senti=line.split('\t')[1]
+            if  senti == 'objective':
+                y.append([0, 1, 0])
+
+            elif senti == 'positive':
+                y.append([0, 0, 1])
+
+            else:  # negative
+                y.append([1, 0, 0])
+
+    return [x_text, y]
+
+
+
 def pad_sentences(sentences, padlen, padding_word="<PAD/>"):
     """
     Pads all sentences to the same length. The length is defined by the longest sentence.
@@ -105,6 +153,27 @@ def build_vocab(sentences):
     vocabulary = {x: i for i, x in enumerate(vocabulary_inv)}
     return [vocabulary, vocabulary_inv]
 
+
+def build_lex_data(sentences, lexiconModel):
+    """
+    Maps sentencs and labels to vectors based on a vocabulary.
+    """
+    def get_index_of_vocab_lex(lexiconModel, word):
+        lexiconList = np.empty([0, 1])
+        for index, eachModel in enumerate(lexiconModel):
+            if word in eachModel:
+                temp = np.array(np.float32(eachModel[word]))
+            else:
+                temp = np.array(np.float32(eachModel["<PAD/>"]))
+            lexiconList = np.append(lexiconList, temp)
+
+        if len(lexiconList) > 15:
+            print len(lexiconList)
+            print '======================over 15======================'
+        return lexiconList
+
+    x_lex = np.array([[get_index_of_vocab_lex(lexiconModel, word) for word in sentence.split(" ")] for sentence in sentences])
+    return x_lex
 
 
 def build_input_data_with_w2v(sentences, labels, w2vmodel, lexiconModel):

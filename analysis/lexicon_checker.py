@@ -125,8 +125,8 @@ def load_lex():
 
         with open(fname, 'rb') as handle:
             each_model = pickle.load(handle)
-            default_vector = default_vector_dic[lexfile.replace('.pickle', '')]
-            each_model["<PAD/>"] = default_vector
+            # default_vector = default_vector_dic[lexfile.replace('.pickle', '')]
+            # each_model["<PAD/>"] = default_vector
             norm_model.append(each_model)
 
 
@@ -150,14 +150,13 @@ def checker():
         for ii, key in enumerate(model.keys()):
             a = np.array(unigram_lexicon_model1[idx][key])
             b = np.array(unigram_lexicon_model2[idx][key])
-            if np.sum(a-b)>0.0001:
-                print key,np.sum(a-b), a, b
+            if np.abs(np.sum(a-b))>0:
+                print 'wrong', key,np.sum(a-b), a, b
 
+        print np.sum(np.array(unigram_lexicon_model1[idx]["<PAD/>"])-np.array(unigram_lexicon_model2[idx]["<PAD/>"]))
         print unigram_lexicon_model1[idx]["<PAD/>"], unigram_lexicon_model2[idx]["<PAD/>"],
         # print ii
         # print unigram_lexicon_model1[i]['good'], unigram_lexicon_model2[i]['good']
-
-    print 'h'
 
 
 
