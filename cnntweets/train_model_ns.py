@@ -183,8 +183,8 @@ def load_lexicon_unigram(lexdim):
     return norm_model, raw_model
 
 
-def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, datasource, model_name, trainable, is_expanded,
-              simple_run=True):
+def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, datasource, model_name, trainable,
+              is_expanded, simple_run=True):
     if simple_run == True:
         print '======================================[simple_run]======================================'
 
@@ -316,15 +316,19 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
             if trainable=='static':
                 is_trainable = False
 
-
+            # sequence_length, num_classes, vocab_size,
+            # embedding_size, filter_sizes, num_filters, embedding_size_lex, num_filters_lex, l2_reg_lambda = 0.0,
+            # trainable = False):
+            #
             cnn = W2V_CNN_TRAINABLE(
                 sequence_length=x_train.shape[1],
-                num_classes=2,
+                num_classes=numberofclass,
+                vocab_size=total_vocab_size,
                 embedding_size=w2vdim,
-                embedding_size_lex=lexdim,
-                num_filters_lex=lexnumfilters,
                 filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
                 num_filters=w2vnumfilters,
+                embedding_size_lex=lexdim,
+                num_filters_lex=lexnumfilters,
                 l2_reg_lambda=FLAGS.l2_reg_lambda,
                 trainable=is_trainable)
 
@@ -598,6 +602,7 @@ if __name__ == "__main__":
 
     run_train(args.w2vsource, args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed,
               args.datasource, args.model, args.trainable, args.expanded, simple_run=False)
+
     # run_train(args.w2vsource, args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed,
     #           args.model, simple_run=True)
 
