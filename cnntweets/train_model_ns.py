@@ -271,7 +271,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
         # WORD2VEC
         x_text, y = cnn_data_helpers.load_data_trainable("trn", rottenTomato=use_rotten_tomato)
         max_document_length = max([len(x.split(" ")) for x in x_text])
-        vocab_processor = learn.preprocessing.VocabularyProcessor(max_len)
+        vocab_processor = learn.preprocessing.VocabularyProcessor(max_document_length)
         total_vocab_size = len(vocab_processor.vocabulary_)
 
 
