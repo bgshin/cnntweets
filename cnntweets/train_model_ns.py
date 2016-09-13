@@ -409,7 +409,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                                 word.append(ch)
                         idx = vocab_processor.vocabulary_.get(word)
                         if idx != 0:
-                            # print str(idx) + " -> " + word
+                            print str(idx) + " -> " + word
                             initW[idx] = np.fromstring(f.read(binary_len), dtype='float32')
                         else:
                             f.read(binary_len)
