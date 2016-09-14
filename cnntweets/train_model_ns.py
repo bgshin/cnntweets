@@ -367,31 +367,54 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
             elif w2vsource == "amazon":
                 the_model_path = the_base_path + 'w2v-%d-%s.bin' % (w2vdim, w2vsource)
 
-            # initial matrix with random uniform
-            initW = np.random.uniform(0.0, 0.0, (total_vocab_size, w2vdim))
+            def load_w2v(w2vdim, simple_run=True, source="twitter"):
+                if simple_run:
+                    return {'a': np.array([np.float32(0.0)] * w2vdim)}
 
-            with Timer("LOADING W2V..."):
-                print("LOADING word2vec file {} \n".format(the_model_path))
-                # W2V
-                with open(the_model_path, "rb") as f:
-                    header = f.readline()
-                    vocab_size, layer1_size = map(int, header.split())
-                    binary_len = np.dtype('float32').itemsize * layer1_size
-                    for line in xrange(vocab_size):
-                        word = []
-                        while True:
-                            ch = f.read(1)
-                            if ch == ' ':
-                                word = ''.join(word)
-                                break
-                            if ch != '\n':
-                                word.append(ch)
-                        idx = vocab_processor.vocabulary_.get(word)
-                        if idx != 0:
-                            # print str(idx) + " -> " + word
-                            initW[idx] = np.fromstring(f.read(binary_len), dtype='float32')
-                        else:
-                            f.read(binary_len)
+                else:
+                    if source == "twitter":
+                        model_path = '../data/emory_w2v/w2v-%d.bin' % w2vdim
+                    elif source == "amazon":
+                        model_path = '../data/emory_w2v/w2v-%d-%s.bin' % (w2vdim, source)
+
+                    model = Word2Vec.load_word2vec_format(model_path, binary=True)
+                    print("The vocabulary size is: " + str(len(model.vocab)))
+
+                    return model
+
+            with Timer("Loading w2v"):
+                w2vmodel = load_w2v(w2vdim, simple_run=False)
+
+            with Timer("Assigning w2v..."):
+                # initial matrix with random uniform
+                initW = np.random.uniform(0.0, 0.0, (total_vocab_size, w2vdim))
+
+                for idx, word in enumerate(vocab_processor.vocabulary_._reverse_mapping):
+                    initW[idx] = w2vmodel[word]
+
+
+            # with Timer("LOADING W2V..."):
+            #     print("LOADING word2vec file {} \n".format(the_model_path))
+            #     # W2V
+            #     with open(the_model_path, "rb") as f:
+            #         header = f.readline()
+            #         vocab_size, layer1_size = map(int, header.split())
+            #         binary_len = np.dtype('float32').itemsize * layer1_size
+            #         for line in xrange(vocab_size):
+            #             word = []
+            #             while True:
+            #                 ch = f.read(1)
+            #                 if ch == ' ':
+            #                     word = ''.join(word)
+            #                     break
+            #                 if ch != '\n':
+            #                     word.append(ch)
+            #             idx = vocab_processor.vocabulary_.get(word)
+            #             if idx != 0:
+            #                 # print str(idx) + " -> " + word
+            #                 initW[idx] = np.fromstring(f.read(binary_len), dtype='float32')
+            #             else:
+            #                 f.read(binary_len)
 
             with Timer('Initialize embedding weights with w2v...'):
                 sess.run(cnn.W.assign(initW))
