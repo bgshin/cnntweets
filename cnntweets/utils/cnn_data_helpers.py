@@ -154,7 +154,7 @@ def build_vocab(sentences):
     return [vocabulary, vocabulary_inv]
 
 
-def build_lex_data(sentences, lexiconModel):
+def build_lex_data(sentences, lexiconModel, padlen):
     """
     Maps sentencs and labels to vectors based on a vocabulary.
     """
@@ -172,7 +172,9 @@ def build_lex_data(sentences, lexiconModel):
             print '======================over 15======================'
         return lexiconList
 
-    x_lex = np.array([[get_index_of_vocab_lex(lexiconModel, word) for word in sentence.split(" ")] for sentence in sentences])
+    sentences = [ sentence.split(" ") for sentence in sentences]
+    sentences_padded = pad_sentences(sentences, padlen)
+    x_lex = np.array([[get_index_of_vocab_lex(lexiconModel, word) for word in sentence] for sentence in sentences_padded])
     return x_lex
 
 

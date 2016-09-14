@@ -240,29 +240,30 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
         with Timer("loading datasets..."):
             # WORD2VEC
             x_train, y_train = cnn_data_helpers.load_data_trainable("trn", rottenTomato=use_rotten_tomato)
-            max_document_length = max([len(x.split(" ")) for x in x_train])
-            vocab_processor = learn.preprocessing.VocabularyProcessor(max_document_length)
+            # max_document_length = max([len(x.split(" ")) for x in x_train])
+            vocab_processor = learn.preprocessing.VocabularyProcessor(max_len)
+            # vocab_processor = learn.preprocessing.VocabularyProcessor(max_document_length)
             vocab_processor.fit_transform(x_train)
             total_vocab_size = len(vocab_processor.vocabulary_._freq)
 
 
-            print 'max_document_length: %d, my_len: %d, total_vocab_size:%d' % (max_document_length, max_len, total_vocab_size)
+            # print 'max_document_length: %d, my_len: %d, total_vocab_size:%d' % (max_document_length, max_len, total_vocab_size)
 
             if simple_run:
                 x_train, y_train = cnn_data_helpers.load_data_trainable("trn_sample", rottenTomato=use_rotten_tomato)
-                x_lex_train = cnn_data_helpers.build_lex_data(x_train, unigram_lexicon_model)
+                x_lex_train = cnn_data_helpers.build_lex_data(x_train, unigram_lexicon_model, max_len)
                 x_dev, y_dev = cnn_data_helpers.load_data_trainable("dev_sample", rottenTomato=use_rotten_tomato)
-                x_lex_dev = cnn_data_helpers.build_lex_data(x_dev, unigram_lexicon_model)
+                x_lex_dev = cnn_data_helpers.build_lex_data(x_dev, unigram_lexicon_model, max_len)
                 x_test, y_test = cnn_data_helpers.load_data_trainable("tst_sample", rottenTomato=use_rotten_tomato)
-                x_lex_test = cnn_data_helpers.build_lex_data(x_test, unigram_lexicon_model)
+                x_lex_test = cnn_data_helpers.build_lex_data(x_test, unigram_lexicon_model, max_len)
 
             else:
                 # x_train, y_train = cnn_data_helpers.load_data_trainable("trn", rottenTomato=use_rotten_tomato)
-                x_lex_train = cnn_data_helpers.build_lex_data(x_train, unigram_lexicon_model)
+                x_lex_train = cnn_data_helpers.build_lex_data(x_train, unigram_lexicon_model, max_len)
                 x_dev, y_dev = cnn_data_helpers.load_data_trainable("dev", rottenTomato=use_rotten_tomato)
-                x_lex_dev = cnn_data_helpers.build_lex_data(x_dev, unigram_lexicon_model)
+                x_lex_dev = cnn_data_helpers.build_lex_data(x_dev, unigram_lexicon_model, max_len)
                 x_test, y_test = cnn_data_helpers.load_data_trainable("tst", rottenTomato=use_rotten_tomato)
-                x_lex_test = cnn_data_helpers.build_lex_data(x_test, unigram_lexicon_model)
+                x_lex_test = cnn_data_helpers.build_lex_data(x_test, unigram_lexicon_model, max_len)
 
             x_train = np.array(list(vocab_processor.fit_transform(x_train)))
             x_dev = np.array(list(vocab_processor.fit_transform(x_dev)))
@@ -291,6 +292,9 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
             # embedding_size, filter_sizes, num_filters, embedding_size_lex, num_filters_lex, l2_reg_lambda = 0.0,
             # trainable = False):
             #
+            print 'x_train.shape[1]=%d, numberofclass=%d, lexdim=%d, total_vocab_size=%d' \
+                  % (x_train.shape[1], numberofclass, lexdim, total_vocab_size)
+
             cnn = W2V_CNN_TRAINABLE(
                 sequence_length=x_train.shape[1],
                 num_classes=numberofclass,
@@ -380,7 +384,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                                 word.append(ch)
                         idx = vocab_processor.vocabulary_.get(word)
                         if idx != 0:
-                            print str(idx) + " -> " + word
+                            # print str(idx) + " -> " + word
                             initW[idx] = np.fromstring(f.read(binary_len), dtype='float32')
                         else:
                             f.read(binary_len)
@@ -392,6 +396,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                 """
                 A single training step
                 """
+                # print len(x_batch[0]), len(y_batch[0]), len(x_batch_lex[0]), len(x_batch_lex[0][0])
                 if x_batch_lex != None:
                     feed_dict = {
                         cnn.input_x: x_batch,
