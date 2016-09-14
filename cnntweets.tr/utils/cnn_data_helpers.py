@@ -25,6 +25,51 @@ def clean_str(string):
     string = re.sub(r"\s{2,}", " ", string)
     return string.strip().lower()
 
+def load_data_trainable(dataset, rottenTomato=False):
+    """
+    Loads MR polarity data from files, splits the data into words and generates labels.
+    Returns split sentences and labels.
+    """
+    # Load data from files
+    if rottenTomato:
+        template_txt = '../data/rt-data-nlp4jtok/%s'
+    else:
+        template_txt = '../data/tweets/txt/%s'
+
+    pathtxt = template_txt % dataset
+
+    x_text=[line.split('\t')[2] for line in open(pathtxt, "r").readlines()]
+    x_text = [sent for sent in x_text]
+
+    y = []
+    if rottenTomato:
+        for line in open(pathtxt, "r").readlines():
+            senti=line.split('\t')[1]
+            if  senti == 'neutral':
+                y.append([0, 0, 1, 0, 0])
+
+            elif senti == 'positive':
+                y.append([0, 0, 0, 1, 0])
+            elif senti == 'very_positive':
+                y.append([0, 0, 0, 0 ,1])
+            elif senti == 'negative':
+                y.append([0, 1, 0, 0 ,0])
+            elif senti == 'very_negative':
+                y.append([1, 0, 0, 0 ,0])
+
+    else:    
+        for line in open(pathtxt, "r").readlines():
+            senti=line.split('\t')[1]
+            if  senti == 'objective':
+                y.append([0, 1, 0])
+
+            elif senti == 'positive':
+                y.append([0, 0, 1])
+
+            else:  # negative
+                y.append([1, 0, 0])
+
+    return [x_text, y]
 
 def load_data_and_labels(dataset, rottenTomato=False):
     """
@@ -72,54 +117,6 @@ def load_data_and_labels(dataset, rottenTomato=False):
     return [x_text, y]
 
 
-def load_data_trainable(dataset, rottenTomato=False):
-    """
-    Loads MR polarity data from files, splits the data into words and generates labels.
-    Returns split sentences and labels.
-    """
-    # Load data from files
-    if rottenTomato:
-        template_txt = '../data/rt-data-nlp4jtok/%s'
-    else:
-        template_txt = '../data/tweets/txt/%s'
-
-    pathtxt = template_txt % dataset
-
-    x_text=[line.split('\t')[2] for line in open(pathtxt, "r").readlines()]
-    x_text = [sent for sent in x_text]
-
-    y = []
-    if rottenTomato:
-        for line in open(pathtxt, "r").readlines():
-            senti=line.split('\t')[1]
-            if  senti == 'neutral':
-                y.append([0, 0, 1, 0, 0])
-
-            elif senti == 'positive':
-                y.append([0, 0, 0, 1, 0])
-            elif senti == 'very_positive':
-                y.append([0, 0, 0, 0 ,1])
-            elif senti == 'negative':
-                y.append([0, 1, 0, 0 ,0])
-            elif senti == 'very_negative':
-                y.append([1, 0, 0, 0 ,0])
-
-    else:
-        for line in open(pathtxt, "r").readlines():
-            senti=line.split('\t')[1]
-            if  senti == 'objective':
-                y.append([0, 1, 0])
-
-            elif senti == 'positive':
-                y.append([0, 0, 1])
-
-            else:  # negative
-                y.append([1, 0, 0])
-
-    return [x_text, y]
-
-
-
 def pad_sentences(sentences, padlen, padding_word="<PAD/>"):
     """
     Pads all sentences to the same length. The length is defined by the longest sentence.
@@ -137,66 +134,6 @@ def pad_sentences(sentences, padlen, padding_word="<PAD/>"):
         new_sentence = sentence + [padding_word] * num_padding
         padded_sentences.append(new_sentence)
     return padded_sentences
-
-
-def build_vocab(sentences):
-    """
-    Builds a vocabulary mapping from word to index based on the sentences.
-    Returns vocabulary mapping and inverse vocabulary mapping.
-    """
-    # Build vocabulary
-    word_counts = Counter(itertools.chain(*sentences))
-    # Mapping from index to word
-    vocabulary_inv = [x[0] for x in word_counts.most_common()]
-    vocabulary_inv = list(sorted(vocabulary_inv))
-    # Mapping from word to index
-    vocabulary = {x: i for i, x in enumerate(vocabulary_inv)}
-    return [vocabulary, vocabulary_inv]
-
-
-def build_lex_data(sentences, lexiconModel, padlen):
-    """
-    Maps sentencs and labels to vectors based on a vocabulary.
-    """
-    def get_index_of_vocab_lex(lexiconModel, word):
-        lexiconList = np.empty([0, 1])
-        for index, eachModel in enumerate(lexiconModel):
-            if word in eachModel:
-                temp = np.array(np.float32(eachModel[word]))
-            else:
-                temp = np.array(np.float32(eachModel["<PAD/>"]))
-            lexiconList = np.append(lexiconList, temp)
-
-        if len(lexiconList) > 15:
-            print len(lexiconList)
-            print '======================over 15======================'
-        return lexiconList
-
-    sentences = [ sentence.split(" ") for sentence in sentences]
-    sentences_padded = pad_sentences(sentences, padlen)
-    x_lex = np.array([[get_index_of_vocab_lex(lexiconModel, word) for word in sentence] for sentence in sentences_padded])
-    return x_lex
-
-def build_w2v_data(dataset, w2vmodel, padlen):
-    """
-    Maps sentencs and labels to vectors based on a vocabulary.
-    """
-    sentences, labels = load_data_and_labels(dataset)
-    sentences_padded = pad_sentences(sentences, padlen)
-
-    w2v_dim = len(w2vmodel["a"])
-
-    def get_index_of_voca(model, word):
-        try:
-            return model[word]
-        except:
-            return np.array([np.float32(0.0)]*w2v_dim)
-
-
-    x = np.array([[get_index_of_voca(w2vmodel,word) for word in sentence] for sentence in sentences_padded])
-    y = np.array(labels)
-    return [x, y]
-
 
 def build_input_data_with_w2v(sentences, labels, w2vmodel, lexiconModel):
     """
