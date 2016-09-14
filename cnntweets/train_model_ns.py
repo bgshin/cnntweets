@@ -244,7 +244,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
             vocab_processor = learn.preprocessing.VocabularyProcessor(max_len)
             # vocab_processor = learn.preprocessing.VocabularyProcessor(max_document_length)
             vocab_processor.fit_transform(x_train)
-            total_vocab_size = len(vocab_processor.vocabulary_._freq)*2
+            total_vocab_size = len(vocab_processor.vocabulary_._freq)+1
 
 
             # print 'max_document_length: %d, my_len: %d, total_vocab_size:%d' % (max_document_length, max_len, total_vocab_size)
@@ -268,6 +268,10 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
             x_train = np.array(list(vocab_processor.fit_transform(x_train)))
             x_dev = np.array(list(vocab_processor.fit_transform(x_dev)))
             x_test = np.array(list(vocab_processor.fit_transform(x_test)))
+
+#         print 'total_vocab_size:%d, newvsize: %d' % (
+#         total_vocab_size, len(vocab_processor.vocabulary_._freq)
+# )
 
         # del (w2vmodel)
         del (norm_model)
