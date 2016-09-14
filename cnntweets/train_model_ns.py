@@ -390,7 +390,8 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                 initW = np.random.uniform(0.0, 0.0, (total_vocab_size, w2vdim))
 
                 for idx, word in enumerate(vocab_processor.vocabulary_._reverse_mapping):
-                    initW[idx] = w2vmodel[word]
+                    if w2vmodel.has_key(word)==True:
+                        initW[idx] = w2vmodel[word]
 
 
             # with Timer("LOADING W2V..."):
