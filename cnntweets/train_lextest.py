@@ -41,7 +41,7 @@ print("\nParameters:")
 for attr, value in sorted(FLAGS.__flags.items()):
     print("{}={}".format(attr.upper(), value))
 print("")
-os.system('cls' if os.name == 'nt' else 'clear')
+# os.system('cls' if os.name == 'nt' else 'clear')
 
 
 def load_w2v2(w2vdim, simple_run=True, base_path='../data/emory_w2v/'):

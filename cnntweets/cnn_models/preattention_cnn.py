@@ -2,15 +2,14 @@ import tensorflow as tf
 import numpy as np
 
 
-class W2V_LEX_CNN(object):
+class TextCNNPreAttention(object):
     """
     A CNN for text classification.
     Uses an embedding layer, followed by a convolutional, max-pooling and softmax layer.
     """
     def __init__(
-            self, sequence_length, num_classes,
-            embedding_size, filter_sizes, num_filters, embedding_size_lex, num_filters_lex, l2_reg_lambda=0.0):
-
+      self, sequence_length, num_classes,
+      embedding_size, filter_sizes, num_filters, embedding_size_lex, num_filters_lex, l2_reg_lambda=0.0):
 
         # Placeholders for input, output and dropout
         self.input_x = tf.placeholder(tf.float32, [None, sequence_length, embedding_size], name="input_x")
@@ -23,16 +22,14 @@ class W2V_LEX_CNN(object):
 
         # Keeping track of l2 regularization loss (optional)
         l2_loss = tf.constant(0.0)
+        self.h_list=[]
+        self.h_lex_list = []
 
         # Embedding layer
         with tf.device('/cpu:0'), tf.name_scope("embedding"):
-            # W = tf.Variable(
-            #     tf.random_uniform([vocab_size, embedding_size], -1.0, 1.0),
-            #     name="W")
-            # self.embedded_chars = tf.nn.embedding_lookup(W, self.input_x)
             self.embedded_chars = self.input_x
             self.embedded_chars_expanded = tf.expand_dims(self.embedded_chars, -1)
-
+            print self.embedded_chars_expanded
 
             # lexicon embedding
             self.embedded_chars_lexicon = self.input_x_lexicon
@@ -42,63 +39,119 @@ class W2V_LEX_CNN(object):
         pooled_outputs = []
         for i, filter_size in enumerate(filter_sizes):
             with tf.name_scope("conv-maxpool-%s" % filter_size):
+                U_shape = [num_filters, num_filters_lex] # (256, 9)
+                U = tf.Variable(tf.truncated_normal(U_shape, stddev=0.1), name="U")
+
                 # Convolution Layer
                 filter_shape = [filter_size, embedding_size, 1, num_filters]
-                W = tf.Variable(tf.truncated_normal(filter_shape, stddev=0.1), name="W")
-                b = tf.Variable(tf.constant(0.1, shape=[num_filters]), name="b")
+                W_E = tf.Variable(tf.truncated_normal(filter_shape, stddev=0.1), name="W_E")
+                b_E = tf.Variable(tf.constant(0.1, shape=[num_filters]), name="b_E")
 
-                # l2_loss += tf.nn.l2_loss(W)/1000
-                # l2_loss += tf.nn.l2_loss(b)/1000
-
-                conv = tf.nn.conv2d(
+                conv_E = tf.nn.conv2d(
                     self.embedded_chars_expanded,
-                    W,
+                    W_E,
                     strides=[1, 1, 1, 1],
                     padding="VALID",
                     name="conv")
+
                 # Apply nonlinearity
-                h = tf.nn.relu(tf.nn.bias_add(conv, b), name="relu")
-                # Maxpooling over the outputs
-                pooled = tf.nn.max_pool(
-                    h,
-                    ksize=[1, sequence_length - filter_size + 1, 1, 1],
-                    strides=[1, 1, 1, 1],
-                    padding='VALID',
-                    name="pool")
-                pooled_outputs.append(pooled)
+                w2v_conv = tf.nn.relu(tf.nn.bias_add(conv_E, b_E), name="relu_E") # (?, 59, 1, 256)
+                self.h_list.append(w2v_conv)
 
-        # APPLY CNN TO LEXICON EMBEDDING
-        for i, filter_size in enumerate(filter_sizes):
-            with tf.name_scope("lexicon-conv-maxpool-%s" % filter_size):
-                # Convolution Layer
-
+                # for the lex
                 filter_shape = [filter_size, embedding_size_lex, 1, num_filters_lex]
-                W = tf.Variable(tf.truncated_normal(filter_shape, stddev=0.1), name="W")
-                b = tf.Variable(tf.constant(0.1, shape=[num_filters_lex]), name="b")
+                W_L = tf.Variable(tf.truncated_normal(filter_shape, stddev=0.1), name="W_L")
+                b_L = tf.Variable(tf.constant(0.1, shape=[num_filters_lex]), name="b_L")
 
-                conv = tf.nn.conv2d(
+                conv_L = tf.nn.conv2d(
                     self.embedded_chars_expanded_lexicon,
-                    W,
+                    W_L,
                     strides=[1, 1, 1, 1],
                     padding="VALID",
                     name="conv")
                 # Apply nonlinearity
-                h = tf.nn.relu(tf.nn.bias_add(conv, b), name="relu")
+                lex_conv = tf.nn.relu(tf.nn.bias_add(conv_L, b_L), name="relu_L") # (?, 59, 1, 9)
+                self.h_lex_list.append(lex_conv)
+
+                w2v_sq = tf.squeeze(w2v_conv, squeeze_dims=[2]) # (?, 59, 256)
+                lex_sq = tf.squeeze(lex_conv, squeeze_dims=[2]) # (?, 59, 9)
+
+                print '[w2v_sq]', w2v_sq
+
+                w2v_sq_tr = tf.batch_matrix_transpose(w2v_sq)
+                print '[w2v_sq_tr]', w2v_sq_tr
+
+                lex_sq_tr = tf.batch_matrix_transpose(lex_sq)
+                print '[lex_sq_tr]', lex_sq_tr
+
+                def fn(previous_output, current_input):
+                    print(current_input.get_shape())
+                    current_ouput = tf.matmul(U, current_input)
+                    print 'previous_output', previous_output
+                    print 'current_ouput', current_ouput
+                    return current_ouput
+
+                initializer = tf.constant(np.zeros([num_filters,59]), dtype=tf.float32)
+
+                Ulex = tf.scan(fn, lex_sq_tr, initializer=initializer)
+                print '[Ulex]', Ulex
+
+                WUL = tf.batch_matmul(w2v_sq, Ulex)
+                print '[WUL]', WUL
+
+
+                WUL_expanded = tf.expand_dims(WUL, -1)
+                print '[WUL_expanded]', WUL_expanded
+
                 # Maxpooling over the outputs
-                pooled = tf.nn.max_pool(
-                    h,
+                row_pool = tf.nn.max_pool(
+                    WUL_expanded,
+                    ksize=[1, 1, sequence_length - filter_size + 1, 1],
+                    strides=[1, 1, 1, 1],
+                    padding='VALID',
+                    name="row_pool")
+
+                print '[row_pool]', row_pool
+
+                col_pool = tf.nn.max_pool(
+                    WUL_expanded,
                     ksize=[1, sequence_length - filter_size + 1, 1, 1],
                     strides=[1, 1, 1, 1],
                     padding='VALID',
-                    name="pool")
-                pooled_outputs.append(pooled)
+                    name="col_pool")
 
+                print '[col_pool]', col_pool
+
+                row_pool_sq = tf.expand_dims(tf.squeeze(row_pool, squeeze_dims=[2, 3]), -1)  # (?, 59, 256)
+                print '[row_pool_sq]', row_pool_sq
+
+                col_pool_sq = tf.expand_dims(tf.squeeze(col_pool, squeeze_dims=[1, 3]), -1)  # (?, 59, 256)
+                print '[col_pool_sq]', col_pool_sq
+
+                print '[w2v_sq_tr]', w2v_sq_tr
+                print '[lex_sq_tr]', lex_sq_tr
+
+                attentioned_w2v = tf.batch_matmul(w2v_sq_tr, col_pool_sq)
+                attentioned_lex = tf.batch_matmul(lex_sq_tr, row_pool_sq)
+
+                attentioned_w2v_sq = tf.squeeze(attentioned_w2v, squeeze_dims=[2])
+                attentioned_lex_sq = tf.squeeze(attentioned_lex, squeeze_dims=[2])
+
+                print '[attentioned_w2v]', attentioned_w2v_sq
+                print '[attentioned_lex]', attentioned_lex_sq
+
+
+                pooled_outputs.append(attentioned_w2v_sq)
+                pooled_outputs.append(attentioned_lex_sq)
 
 
         # Combine all the pooled features
         num_filters_total = num_filters * len(filter_sizes) + num_filters_lex * len(filter_sizes)
-        self.h_pool = tf.concat(3, pooled_outputs)
+        print '[pooled_outputs]', len(pooled_outputs)
+        self.h_pool = tf.concat(1, pooled_outputs)
+        print '[self.h_pool]', self.h_pool
         self.h_pool_flat = tf.reshape(self.h_pool, [-1, num_filters_total])
+        print '[self.h_pool_flat]', self.h_pool_flat
 
         # Add dropout
         with tf.name_scope("dropout"):
@@ -113,7 +166,6 @@ class W2V_LEX_CNN(object):
             b = tf.Variable(tf.constant(0.1, shape=[num_classes]), name="b")
             l2_loss += tf.nn.l2_loss(W)/30
             l2_loss += tf.nn.l2_loss(b)/30
-            self._b = b
             self.scores = tf.nn.xw_plus_b(self.h_drop, W, b, name="scores")
             self.predictions = tf.argmax(self.scores, 1, name="predictions")
 
@@ -161,11 +213,9 @@ class W2V_LEX_CNN(object):
             correct_predictions_np = tf.equal(negp_golds, negp_preds)
             self.neg_p = tf.reduce_mean(tf.cast(correct_predictions_np, "float"), name="neg_precision")
 
-            self.f1_neg = 2 * self.neg_p * self.neg_r / (self.neg_p + self.neg_r ) * 100
-            self.f1_pos = 2 * pos_p * pos_r / (pos_p + pos_r ) * 100
+            self.f1_neg = 2 * self.neg_p * self.neg_r / (self.neg_p + self.neg_r + 0.00001) * 100
+            self.f1_pos = 2 * pos_p * pos_r / (pos_p + pos_r + 0.00001) * 100
 
             self.avg_f1 = (self.f1_neg + self.f1_pos) / 2
-
-
 
 
