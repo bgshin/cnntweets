@@ -35,11 +35,61 @@ class TextCNNPreAttention(object):
             self.embedded_chars_lexicon = self.input_x_lexicon
             self.embedded_chars_expanded_lexicon = tf.expand_dims(self.embedded_chars_lexicon, -1)
 
+            print '[self.embedded_chars]', self.embedded_chars
+            print '[self.embedded_chars_expanded]', self.embedded_chars_expanded
+
+
+            print '[self.embedded_chars_lexicon]', self.embedded_chars_lexicon
+            print '[self.embedded_chars_expanded_lexicon]', self.embedded_chars_expanded_lexicon
+
+
+        with tf.name_scope("pre-attention"):
+            U_shape = [embedding_size, embedding_size_lex]  # (400, 15)
+            self.U = tf.Variable(tf.truncated_normal(U_shape, stddev=0.1), name="U")
+
+            # self.UL = self.embedded_chars_lexicon
+            self.embedded_chars # (?, 60, 400)
+            self.embedded_chars_lexicon # (?, 60, 15)
+
+            self.embedded_chars_lexicon_tr = tf.batch_matrix_transpose(self.embedded_chars_lexicon)
+            print '[self.embedded_chars_lexicon_tr]', self.embedded_chars_lexicon_tr
+
+            def fn(previous_output, current_input):
+                print(current_input.get_shape())
+                current_ouput = tf.matmul(self.U, current_input)
+                print 'previous_output', previous_output
+                print 'current_ouput', current_ouput
+                return current_ouput
+
+            initializer = tf.constant(np.zeros([embedding_size, sequence_length]), dtype=tf.float32)
+            Ulex = tf.scan(fn, self.embedded_chars_lexicon_tr, initializer=initializer)
+            print '[Ulex]', Ulex
+
+            WUL = tf.batch_matmul(self.embedded_chars, Ulex)
+            print '[WUL]', WUL
+
+            # self.UL = tf.batch_matmul(self.U, self.embedded_chars_lexicon_tr)
+            #
+            # print '[self.UL]', self.UL
+
+
+            # initializer = tf.constant(np.zeros([num_filters, 59]), dtype=tf.float32)
+            #
+            # Ulex = tf.scan(fn, lex_sq_tr, initializer=initializer)
+            # print '[Ulex]', Ulex
+            #
+            # WUL = tf.batch_matmul(w2v_sq, Ulex)
+            # print '[WUL]', WUL
+
+
+
+
+
         # Create a convolution + maxpool layer for each filter size
         pooled_outputs = []
         for i, filter_size in enumerate(filter_sizes):
             with tf.name_scope("conv-maxpool-%s" % filter_size):
-                U_shape = [num_filters, num_filters_lex] # (256, 9)
+                U_shape = [num_filters, num_filters_lex]  # (256, 9)
                 U = tf.Variable(tf.truncated_normal(U_shape, stddev=0.1), name="U")
 
                 # Convolution Layer

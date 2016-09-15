@@ -10,7 +10,8 @@ from utils.butils import Timer
 from cnn_models.w2v_lex_cnn import W2V_LEX_CNN
 from cnn_models.w2v_cnn import W2V_CNN
 from cnn_models.attention_cnn import TextCNNAttention
-from utils.word2vecReader import Word2Vec
+# from utils.word2vecReader import Word2Vec
+from gensim.models import Word2Vec
 import time
 import gc
 import re
