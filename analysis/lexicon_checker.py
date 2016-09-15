@@ -151,7 +151,7 @@ def checker():
 
                 a = np.array(unigram_lexicon_model1[idx][key])
                 b = np.array(unigram_lexicon_model2[idx][key])
-                print key, a, b
+                # print key, a, b
                 if np.abs(np.sum(a-b))>0:
                     print '!!!!!!!!!!!!!!!!!!wrong', key,np.sum(a-b), a, b
 

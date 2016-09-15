@@ -199,7 +199,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
             print 'new way of loading lexicon'
             default_vector_dic = {'EverythingUnigramsPMIHS': [0],
                                   'HS-AFFLEX-NEGLEX-unigrams': [0, 0, 0],
-                                  'Maxdiff-Twitter-Lexicon_0to1': [0.5],
+                                  'Maxdiff-Twitter-Lexicon_0to1': [0.50403226],
                                   'S140-AFFLEX-NEGLEX-unigrams': [0, 0, 0],
                                   'unigrams-pmilexicon': [0, 0, 0],
                                   'unigrams-pmilexicon_sentiment_140': [0, 0, 0],
@@ -239,8 +239,8 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
 
                 with open(fname, 'rb') as handle:
                     each_model = pickle.load(handle)
-                    # default_vector = default_vector_dic[lexfile.replace('.pickle', '')]
-                    # each_model["<PAD/>"] = default_vector
+                    default_vector = default_vector_dic[lexfile.replace('.pickle', '')]
+                    each_model["<PAD/>"] = default_vector
                     norm_model.append(each_model)
 
     with Timer("w2v"):
