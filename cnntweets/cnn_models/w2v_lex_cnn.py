@@ -161,8 +161,8 @@ class W2V_LEX_CNN(object):
             correct_predictions_np = tf.equal(negp_golds, negp_preds)
             self.neg_p = tf.reduce_mean(tf.cast(correct_predictions_np, "float"), name="neg_precision")
 
-            self.f1_neg = 2 * self.neg_p * self.neg_r / (self.neg_p + self.neg_r ) * 100
-            self.f1_pos = 2 * pos_p * pos_r / (pos_p + pos_r ) * 100
+            self.f1_neg = 2 * self.neg_p * self.neg_r / (self.neg_p + self.neg_r + 0.00001) * 100
+            self.f1_pos = 2 * pos_p * pos_r / (pos_p + pos_r + 0.00001) * 100
 
             self.avg_f1 = (self.f1_neg + self.f1_pos) / 2
 

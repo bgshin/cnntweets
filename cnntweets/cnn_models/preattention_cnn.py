@@ -42,7 +42,7 @@ class TextCNNPreAttention(object):
             print '[self.embedded_chars_lexicon]', self.embedded_chars_lexicon
             print '[self.embedded_chars_expanded_lexicon]', self.embedded_chars_expanded_lexicon
 
-
+        attention_outputs = []
         with tf.name_scope("pre-attention"):
             U_shape = [embedding_size, embedding_size_lex]  # (400, 15)
             self.U = tf.Variable(tf.truncated_normal(U_shape, stddev=0.1), name="U")
@@ -51,6 +51,7 @@ class TextCNNPreAttention(object):
             self.embedded_chars # (?, 60, 400)
             self.embedded_chars_lexicon # (?, 60, 15)
 
+            self.embedded_chars_tr = tf.batch_matrix_transpose(self.embedded_chars)
             self.embedded_chars_lexicon_tr = tf.batch_matrix_transpose(self.embedded_chars_lexicon)
             print '[self.embedded_chars_lexicon_tr]', self.embedded_chars_lexicon_tr
 
@@ -65,147 +66,123 @@ class TextCNNPreAttention(object):
             Ulex = tf.scan(fn, self.embedded_chars_lexicon_tr, initializer=initializer)
             print '[Ulex]', Ulex
 
-            WUL = tf.batch_matmul(self.embedded_chars, Ulex)
-            print '[WUL]', WUL
+            self.WUL = tf.batch_matmul(self.embedded_chars, Ulex)
+            print '[self.WUL]', self.WUL
 
-            # self.UL = tf.batch_matmul(self.U, self.embedded_chars_lexicon_tr)
-            #
-            # print '[self.UL]', self.UL
+            WUL_expanded = tf.expand_dims(self.WUL, -1)
+            print '[WUL_expanded]', WUL_expanded
+
+            row_pool = tf.nn.max_pool(
+                WUL_expanded,
+                ksize=[1, 1, sequence_length, 1],
+                strides=[1, 1, 1, 1],
+                padding='VALID',
+                name="row_pool")
+
+            print '[row_pool]', row_pool
+
+            col_pool = tf.nn.max_pool(
+                WUL_expanded,
+                ksize=[1, sequence_length, 1, 1],
+                strides=[1, 1, 1, 1],
+                padding='VALID',
+                name="col_pool")
+
+            row_pool_sq = tf.expand_dims(tf.squeeze(row_pool, squeeze_dims=[2, 3]), -1)  # (?, 59, 256)
+            print '[row_pool_sq]', row_pool_sq
+
+            col_pool_sq = tf.expand_dims(tf.squeeze(col_pool, squeeze_dims=[1, 3]), -1)  # (?, 59, 256)
+            print '[col_pool_sq]', col_pool_sq
 
 
-            # initializer = tf.constant(np.zeros([num_filters, 59]), dtype=tf.float32)
-            #
-            # Ulex = tf.scan(fn, lex_sq_tr, initializer=initializer)
-            # print '[Ulex]', Ulex
-            #
-            # WUL = tf.batch_matmul(w2v_sq, Ulex)
-            # print '[WUL]', WUL
+            attentioned_w2v = tf.batch_matmul(self.embedded_chars_tr, col_pool_sq)
+            attentioned_lex = tf.batch_matmul(self.embedded_chars_lexicon_tr, row_pool_sq)
 
+            attentioned_w2v_sq = tf.squeeze(attentioned_w2v, squeeze_dims=[2])
+            attentioned_lex_sq = tf.squeeze(attentioned_lex, squeeze_dims=[2])
 
+            print '[attentioned_w2v]', attentioned_w2v_sq
+            print '[attentioned_lex]', attentioned_lex_sq
+            attention_outputs.append(attentioned_w2v_sq)
+            attention_outputs.append(attentioned_lex_sq)
 
-
+        # Create a convolution + maxpool layer for each filter size
 
         # Create a convolution + maxpool layer for each filter size
         pooled_outputs = []
         for i, filter_size in enumerate(filter_sizes):
             with tf.name_scope("conv-maxpool-%s" % filter_size):
-                U_shape = [num_filters, num_filters_lex]  # (256, 9)
-                U = tf.Variable(tf.truncated_normal(U_shape, stddev=0.1), name="U")
-
                 # Convolution Layer
                 filter_shape = [filter_size, embedding_size, 1, num_filters]
-                W_E = tf.Variable(tf.truncated_normal(filter_shape, stddev=0.1), name="W_E")
-                b_E = tf.Variable(tf.constant(0.1, shape=[num_filters]), name="b_E")
+                W = tf.Variable(tf.truncated_normal(filter_shape, stddev=0.1), name="W")
+                b = tf.Variable(tf.constant(0.1, shape=[num_filters]), name="b")
 
-                conv_E = tf.nn.conv2d(
+                # l2_loss += tf.nn.l2_loss(W)/1000
+                # l2_loss += tf.nn.l2_loss(b)/1000
+
+                conv = tf.nn.conv2d(
                     self.embedded_chars_expanded,
-                    W_E,
-                    strides=[1, 1, 1, 1],
-                    padding="VALID",
-                    name="conv")
-
-                # Apply nonlinearity
-                w2v_conv = tf.nn.relu(tf.nn.bias_add(conv_E, b_E), name="relu_E") # (?, 59, 1, 256)
-                self.h_list.append(w2v_conv)
-
-                # for the lex
-                filter_shape = [filter_size, embedding_size_lex, 1, num_filters_lex]
-                W_L = tf.Variable(tf.truncated_normal(filter_shape, stddev=0.1), name="W_L")
-                b_L = tf.Variable(tf.constant(0.1, shape=[num_filters_lex]), name="b_L")
-
-                conv_L = tf.nn.conv2d(
-                    self.embedded_chars_expanded_lexicon,
-                    W_L,
+                    W,
                     strides=[1, 1, 1, 1],
                     padding="VALID",
                     name="conv")
                 # Apply nonlinearity
-                lex_conv = tf.nn.relu(tf.nn.bias_add(conv_L, b_L), name="relu_L") # (?, 59, 1, 9)
-                self.h_lex_list.append(lex_conv)
-
-                w2v_sq = tf.squeeze(w2v_conv, squeeze_dims=[2]) # (?, 59, 256)
-                lex_sq = tf.squeeze(lex_conv, squeeze_dims=[2]) # (?, 59, 9)
-
-                print '[w2v_sq]', w2v_sq
-
-                w2v_sq_tr = tf.batch_matrix_transpose(w2v_sq)
-                print '[w2v_sq_tr]', w2v_sq_tr
-
-                lex_sq_tr = tf.batch_matrix_transpose(lex_sq)
-                print '[lex_sq_tr]', lex_sq_tr
-
-                def fn(previous_output, current_input):
-                    print(current_input.get_shape())
-                    current_ouput = tf.matmul(U, current_input)
-                    print 'previous_output', previous_output
-                    print 'current_ouput', current_ouput
-                    return current_ouput
-
-                initializer = tf.constant(np.zeros([num_filters,59]), dtype=tf.float32)
-
-                Ulex = tf.scan(fn, lex_sq_tr, initializer=initializer)
-                print '[Ulex]', Ulex
-
-                WUL = tf.batch_matmul(w2v_sq, Ulex)
-                print '[WUL]', WUL
-
-
-                WUL_expanded = tf.expand_dims(WUL, -1)
-                print '[WUL_expanded]', WUL_expanded
-
+                h = tf.nn.relu(tf.nn.bias_add(conv, b), name="relu")
                 # Maxpooling over the outputs
-                row_pool = tf.nn.max_pool(
-                    WUL_expanded,
-                    ksize=[1, 1, sequence_length - filter_size + 1, 1],
-                    strides=[1, 1, 1, 1],
-                    padding='VALID',
-                    name="row_pool")
-
-                print '[row_pool]', row_pool
-
-                col_pool = tf.nn.max_pool(
-                    WUL_expanded,
+                pooled = tf.nn.max_pool(
+                    h,
                     ksize=[1, sequence_length - filter_size + 1, 1, 1],
                     strides=[1, 1, 1, 1],
                     padding='VALID',
-                    name="col_pool")
+                    name="pool")
+                pooled_outputs.append(pooled)
 
-                print '[col_pool]', col_pool
+        # APPLY CNN TO LEXICON EMBEDDING
+        for i, filter_size in enumerate(filter_sizes):
+            with tf.name_scope("lexicon-conv-maxpool-%s" % filter_size):
+                # Convolution Layer
 
-                row_pool_sq = tf.expand_dims(tf.squeeze(row_pool, squeeze_dims=[2, 3]), -1)  # (?, 59, 256)
-                print '[row_pool_sq]', row_pool_sq
+                filter_shape = [filter_size, embedding_size_lex, 1, num_filters_lex]
+                W = tf.Variable(tf.truncated_normal(filter_shape, stddev=0.1), name="W")
+                b = tf.Variable(tf.constant(0.1, shape=[num_filters_lex]), name="b")
 
-                col_pool_sq = tf.expand_dims(tf.squeeze(col_pool, squeeze_dims=[1, 3]), -1)  # (?, 59, 256)
-                print '[col_pool_sq]', col_pool_sq
-
-                print '[w2v_sq_tr]', w2v_sq_tr
-                print '[lex_sq_tr]', lex_sq_tr
-
-                attentioned_w2v = tf.batch_matmul(w2v_sq_tr, col_pool_sq)
-                attentioned_lex = tf.batch_matmul(lex_sq_tr, row_pool_sq)
-
-                attentioned_w2v_sq = tf.squeeze(attentioned_w2v, squeeze_dims=[2])
-                attentioned_lex_sq = tf.squeeze(attentioned_lex, squeeze_dims=[2])
-
-                print '[attentioned_w2v]', attentioned_w2v_sq
-                print '[attentioned_lex]', attentioned_lex_sq
-
-
-                pooled_outputs.append(attentioned_w2v_sq)
-                pooled_outputs.append(attentioned_lex_sq)
-
+                conv = tf.nn.conv2d(
+                    self.embedded_chars_expanded_lexicon,
+                    W,
+                    strides=[1, 1, 1, 1],
+                    padding="VALID",
+                    name="conv")
+                # Apply nonlinearity
+                h = tf.nn.relu(tf.nn.bias_add(conv, b), name="relu")
+                # Maxpooling over the outputs
+                pooled = tf.nn.max_pool(
+                    h,
+                    ksize=[1, sequence_length - filter_size + 1, 1, 1],
+                    strides=[1, 1, 1, 1],
+                    padding='VALID',
+                    name="pool")
+                pooled_outputs.append(pooled)
 
         # Combine all the pooled features
         num_filters_total = num_filters * len(filter_sizes) + num_filters_lex * len(filter_sizes)
-        print '[pooled_outputs]', len(pooled_outputs)
-        self.h_pool = tf.concat(1, pooled_outputs)
-        print '[self.h_pool]', self.h_pool
+        self.h_pool = tf.concat(3, pooled_outputs)
         self.h_pool_flat = tf.reshape(self.h_pool, [-1, num_filters_total])
+        print '[self.h_pool]', self.h_pool
         print '[self.h_pool_flat]', self.h_pool_flat
+
+        print 'pooled_outputs[0]', pooled_outputs[0]
+        print 'pooled_outputs[1]', pooled_outputs[1]
+
+        print 'attention_outputs[0]', attention_outputs[0]
+        print 'attention_outputs[1]', attention_outputs[1]
+
+        self.appended_pool = tf.concat(1, [self.h_pool_flat, attention_outputs[0], attention_outputs[1]])
+        print '[self.appended_pool]', self.appended_pool
+        num_filters_total = num_filters_total + embedding_size + embedding_size_lex
 
         # Add dropout
         with tf.name_scope("dropout"):
-            self.h_drop = tf.nn.dropout(self.h_pool_flat, self.dropout_keep_prob)
+            self.h_drop = tf.nn.dropout(self.appended_pool, self.dropout_keep_prob)
 
         # Final (unnormalized) scores and predictions
         with tf.name_scope("output"):
@@ -263,8 +240,8 @@ class TextCNNPreAttention(object):
             correct_predictions_np = tf.equal(negp_golds, negp_preds)
             self.neg_p = tf.reduce_mean(tf.cast(correct_predictions_np, "float"), name="neg_precision")
 
-            self.f1_neg = 2 * self.neg_p * self.neg_r / (self.neg_p + self.neg_r + 0.00001) * 100
-            self.f1_pos = 2 * pos_p * pos_r / (pos_p + pos_r + 0.00001) * 100
+            self.f1_neg = 2 * self.neg_p * self.neg_r / (self.neg_p + self.neg_r) * 100
+            self.f1_pos = 2 * pos_p * pos_r / (pos_p + pos_r) * 100
 
             self.avg_f1 = (self.f1_neg + self.f1_pos) / 2
 

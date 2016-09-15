@@ -9,7 +9,7 @@ from utils import cnn_data_helpers
 from utils.butils import Timer
 from cnn_models.w2v_lex_cnn import W2V_LEX_CNN
 from cnn_models.w2v_cnn import W2V_CNN
-from cnn_models.attention_cnn import TextCNNAttention
+from cnn_models.preattention_cnn import TextCNNPreAttention
 from utils.word2vecReader import Word2Vec
 import time
 import gc
@@ -332,8 +332,8 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                     num_filters=w2vnumfilters,
                     l2_reg_lambda=FLAGS.l2_reg_lambda)
 
-            else:  # model_name == 'attention'
-                cnn = TextCNNAttention(
+            elif model_name == 'att':
+                cnn = TextCNNPreAttention(
                     sequence_length=x_train.shape[1],
                     num_classes=3,
                     embedding_size=w2vdim,
@@ -342,6 +342,29 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                     filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
                     num_filters=w2vnumfilters,
                     l2_reg_lambda=FLAGS.l2_reg_lambda)
+
+            elif model_name == 'attrt':
+                cnn = TextCNNPreAttention(
+                    sequence_length=x_train.shape[1],
+                    num_classes=5,
+                    embedding_size=w2vdim,
+                    embedding_size_lex=lexdim,
+                    num_filters_lex=lexnumfilters,
+                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
+                    num_filters=w2vnumfilters,
+                    l2_reg_lambda=FLAGS.l2_reg_lambda)
+
+            else: # default is w2vlex
+                cnn = W2V_LEX_CNN(
+                    sequence_length=x_train.shape[1],
+                    num_classes=3,
+                    embedding_size=w2vdim,
+                    embedding_size_lex=lexdim,
+                    num_filters_lex=lexnumfilters,
+                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
+                    num_filters=w2vnumfilters,
+                    l2_reg_lambda=FLAGS.l2_reg_lambda)
+
 
             # Define Training procedure
             global_step = tf.Variable(0, name="global_step", trainable=False)
