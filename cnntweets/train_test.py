@@ -581,11 +581,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--w2vsource', default='twitter', choices=['twitter', 'amazon'], type=str)
     parser.add_argument('--w2vdim', default=400, type=int)
-    parser.add_argument('--w2vnumfilters', default=32, type=int)
+    parser.add_argument('--w2vnumfilters', default=64, type=int)
     parser.add_argument('--lexdim', default=15, type=int)
     parser.add_argument('--lexnumfilters', default=9, type=int)
     parser.add_argument('--randomseed', default=7, type=int)
-    parser.add_argument('--model', default='w2vlex', choices=['w2v', 'w2vrt', 'w2vlex', 'w2vrtlex', 'attention'],
+    parser.add_argument('--model', default='att', choices=['w2v', 'w2vrt', 'w2vlex', 'w2vrtlex', 'att', 'attrt'],
                         type=str)  # w2v, w2vlex, attention
     parser.add_argument('--expanded', default=0, choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 1234567], type=int)
 
