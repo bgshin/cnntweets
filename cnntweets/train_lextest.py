@@ -239,8 +239,8 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
 
                 with open(fname, 'rb') as handle:
                     each_model = pickle.load(handle)
-                    default_vector = default_vector_dic[lexfile.replace('.pickle', '')]
-                    each_model["<PAD/>"] = default_vector
+                    # default_vector = default_vector_dic[lexfile.replace('.pickle', '')]
+                    # each_model["<PAD/>"] = default_vector
                     norm_model.append(each_model)
 
     with Timer("w2v"):

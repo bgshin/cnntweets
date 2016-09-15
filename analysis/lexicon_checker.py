@@ -144,19 +144,21 @@ def checker():
 
     print len(unigram_lexicon_model1), len(unigram_lexicon_model2)
 
+    with Timer("check..."):
+        for idx, model in enumerate(unigram_lexicon_model1):
+            print idx
+            for ii, key in enumerate(model.keys()):
 
-    for idx, model in enumerate(unigram_lexicon_model1):
-        print idx
-        for ii, key in enumerate(model.keys()):
-            a = np.array(unigram_lexicon_model1[idx][key])
-            b = np.array(unigram_lexicon_model2[idx][key])
-            if np.abs(np.sum(a-b))>0:
-                print 'wrong', key,np.sum(a-b), a, b
+                a = np.array(unigram_lexicon_model1[idx][key])
+                b = np.array(unigram_lexicon_model2[idx][key])
+                print key, a, b
+                if np.abs(np.sum(a-b))>0:
+                    print '!!!!!!!!!!!!!!!!!!wrong', key,np.sum(a-b), a, b
 
-        print np.sum(np.array(unigram_lexicon_model1[idx]["<PAD/>"])-np.array(unigram_lexicon_model2[idx]["<PAD/>"]))
-        print unigram_lexicon_model1[idx]["<PAD/>"], unigram_lexicon_model2[idx]["<PAD/>"],
-        # print ii
-        # print unigram_lexicon_model1[i]['good'], unigram_lexicon_model2[i]['good']
+            print np.sum(np.array(unigram_lexicon_model1[idx]["<PAD/>"])-np.array(unigram_lexicon_model2[idx]["<PAD/>"]))
+            print unigram_lexicon_model1[idx]["<PAD/>"], unigram_lexicon_model2[idx]["<PAD/>"],
+            # print ii
+            # print unigram_lexicon_model1[i]['good'], unigram_lexicon_model2[i]['good']
 
 
 
