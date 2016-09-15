@@ -215,10 +215,10 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
 
             for idx, lexfile in enumerate(lexfile_list):
                 if is_expanded == 1234567:  # expand all
-                    fname = '../data/le/exp_compact.%s' % lexfile
-                    print 'expanded lexicon for exp_compact.%s' % lexfile
-                    # fname = '../data/le/exp_1.1.%s' % lexfile
-                    # print 'expanded lexicon for exp_1.1.%s' % lexfile
+                    # fname = '../data/le/exp_compact.%s' % lexfile
+                    # print 'expanded lexicon for exp_compact.%s' % lexfile
+                    fname = '../data/le/exp_1.1.%s' % lexfile
+                    print 'expanded lexicon for exp_1.1.%s' % lexfile
 
 
                 elif is_expanded - 1 == idx:
