@@ -336,13 +336,10 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                 w2vmodel = load_w2v(w2vdim, simple_run=False)
 
             # initial matrix with random uniform
-            initW = np.random.uniform(0.0,0.0,(total_vocab_size, w2vdim))
-            initW_lex = np.random.uniform(0.00,0.2,(total_vocab_size, lexdim))
+            initW = np.random.uniform(0.0, 0.0,(total_vocab_size, w2vdim))
+            initW_lex = np.random.uniform(0.0, 0.0,(total_vocab_size, lexdim))
             # load any vectors from the word2vec
             with Timer("Assigning w2v..."):
-                # initial matrix with random uniform
-                initW = np.random.uniform(0.0, 0.0, (total_vocab_size, w2vdim))
-
                 for idx, word in enumerate(vocab_processor.vocabulary_._reverse_mapping):
                     if w2vmodel.vocab.has_key(word) == True:
                         initW[idx] = w2vmodel[word]
