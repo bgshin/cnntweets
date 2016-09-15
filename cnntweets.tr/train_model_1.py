@@ -162,33 +162,35 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
     norm_model = []
 
     with Timer("lex"):
-        print 'new way of loading lexicon'
-        default_vector_dic = {'EverythingUnigramsPMIHS': [0],
-                              'HS-AFFLEX-NEGLEX-unigrams': [0, 0, 0],
-                              'Maxdiff-Twitter-Lexicon_0to1': [0.5],
-                              'S140-AFFLEX-NEGLEX-unigrams': [0, 0, 0],
-                              'unigrams-pmilexicon': [0, 0, 0],
-                              'unigrams-pmilexicon_sentiment_140': [0, 0, 0],
-                              'BL': [0]}
+        norm_model, raw_model = load_lexicon_unigram(lexdim)
 
-        lexfile_list = ['EverythingUnigramsPMIHS.pickle',
-                        'HS-AFFLEX-NEGLEX-unigrams.pickle',
-                        'Maxdiff-Twitter-Lexicon_0to1.pickle',
-                        'S140-AFFLEX-NEGLEX-unigrams.pickle',
-                        'unigrams-pmilexicon.pickle',
-                        'unigrams-pmilexicon_sentiment_140.pickle',
-                        'BL.pickle']
-
-
-        for idx, lexfile in enumerate(lexfile_list):
-            fname = '../data/le/%s' % lexfile
-            print 'default lexicon for %s' % lexfile
-
-            with open(fname, 'rb') as handle:
-                each_model = pickle.load(handle)
-                default_vector = default_vector_dic[lexfile.replace('.pickle', '')]
-                each_model["<PAD/>"] = default_vector
-                norm_model.append(each_model)
+        # print 'new way of loading lexicon'
+        # default_vector_dic = {'EverythingUnigramsPMIHS': [0],
+        #                       'HS-AFFLEX-NEGLEX-unigrams': [0, 0, 0],
+        #                       'Maxdiff-Twitter-Lexicon_0to1': [0.5],
+        #                       'S140-AFFLEX-NEGLEX-unigrams': [0, 0, 0],
+        #                       'unigrams-pmilexicon': [0, 0, 0],
+        #                       'unigrams-pmilexicon_sentiment_140': [0, 0, 0],
+        #                       'BL': [0]}
+        #
+        # lexfile_list = ['EverythingUnigramsPMIHS.pickle',
+        #                 'HS-AFFLEX-NEGLEX-unigrams.pickle',
+        #                 'Maxdiff-Twitter-Lexicon_0to1.pickle',
+        #                 'S140-AFFLEX-NEGLEX-unigrams.pickle',
+        #                 'unigrams-pmilexicon.pickle',
+        #                 'unigrams-pmilexicon_sentiment_140.pickle',
+        #                 'BL.pickle']
+        #
+        #
+        # for idx, lexfile in enumerate(lexfile_list):
+        #     fname = '../data/le/%s' % lexfile
+        #     print 'default lexicon for %s' % lexfile
+        #
+        #     with open(fname, 'rb') as handle:
+        #         each_model = pickle.load(handle)
+        #         default_vector = default_vector_dic[lexfile.replace('.pickle', '')]
+        #         each_model["<PAD/>"] = default_vector
+        #         norm_model.append(each_model)
 
     
     unigram_lexicon_model = norm_model
