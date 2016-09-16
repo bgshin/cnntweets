@@ -95,8 +95,10 @@ class TextCNNPreAttention(object):
             print '[col_pool_sq]', col_pool_sq
 
 
-            attentioned_w2v = tf.batch_matmul(self.embedded_chars_tr, col_pool_sq)
-            attentioned_lex = tf.batch_matmul(self.embedded_chars_lexicon_tr, row_pool_sq)
+            attentioned_w2v = tf.batch_matmul(self.embedded_chars_tr, row_pool_sq)
+            attentioned_lex = tf.batch_matmul(self.embedded_chars_lexicon_tr, col_pool_sq)
+            # attentioned_w2v = tf.batch_matmul(self.embedded_chars_tr, col_pool_sq)
+            # attentioned_lex = tf.batch_matmul(self.embedded_chars_lexicon_tr, row_pool_sq)
 
             attentioned_w2v_sq = tf.squeeze(attentioned_w2v, squeeze_dims=[2])
             attentioned_lex_sq = tf.squeeze(attentioned_lex, squeeze_dims=[2])
