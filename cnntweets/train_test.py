@@ -9,7 +9,7 @@ from utils import cnn_data_helpers
 from utils.butils import Timer
 from cnn_models.w2v_lex_cnn import W2V_LEX_CNN
 from cnn_models.w2v_cnn import W2V_CNN
-from cnn_models.preattention_cnn import TextCNNPreAttention
+from cnn_models.preattention_cnn import TextCNNPreAttention, TextCNNAttention2Vec
 from utils.word2vecReader import Word2Vec
 import time
 import gc
@@ -354,6 +354,28 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                     num_filters=w2vnumfilters,
                     l2_reg_lambda=FLAGS.l2_reg_lambda)
 
+            elif model_name == 'a2v':
+                cnn = TextCNNAttention2Vec(
+                    sequence_length=x_train.shape[1],
+                    num_classes=3,
+                    embedding_size=w2vdim,
+                    embedding_size_lex=lexdim,
+                    num_filters_lex=lexnumfilters,
+                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
+                    num_filters=w2vnumfilters,
+                    l2_reg_lambda=FLAGS.l2_reg_lambda)
+
+            elif model_name == 'a2vrt':
+                cnn = TextCNNAttention2Vec(
+                    sequence_length=x_train.shape[1],
+                    num_classes=5,
+                    embedding_size=w2vdim,
+                    embedding_size_lex=lexdim,
+                    num_filters_lex=lexnumfilters,
+                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
+                    num_filters=w2vnumfilters,
+                    l2_reg_lambda=FLAGS.l2_reg_lambda)
+
             else: # default is w2vlex
                 cnn = W2V_LEX_CNN(
                     sequence_length=x_train.shape[1],
@@ -584,10 +606,10 @@ if __name__ == "__main__":
     parser.add_argument('--w2vnumfilters', default=64, type=int)
     parser.add_argument('--lexdim', default=15, type=int)
     parser.add_argument('--lexnumfilters', default=9, type=int)
-    parser.add_argument('--randomseed', default=7, type=int)
-    parser.add_argument('--model', default='att', choices=['w2v', 'w2vrt', 'w2vlex', 'w2vrtlex', 'att', 'attrt'],
+    parser.add_argument('--randomseed', default=1, type=int)
+    parser.add_argument('--model', default='a2v', choices=['w2v', 'w2vrt', 'w2vlex', 'w2vrtlex', 'att', 'attrt'],
                         type=str)  # w2v, w2vlex, attention
-    parser.add_argument('--expanded', default=0, choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 1234567], type=int)
+    parser.add_argument('--expanded', default=1234567, choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 1234567], type=int)
 
     args = parser.parse_args()
     program = os.path.basename(sys.argv[0])
