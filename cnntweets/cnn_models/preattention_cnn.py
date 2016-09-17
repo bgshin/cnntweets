@@ -740,11 +740,11 @@ class TextCNNAttention2VecIndividual(object):
                 print 'current_ouput', current_ouput
                 return current_ouput
 
-            initializer = tf.constant(np.zeros([embedding_size, attention_depth]), dtype=tf.float32)
+            initializer = tf.constant(np.zeros([sequence_length, attention_depth]), dtype=tf.float32)
             WU_w2v = tf.scan(fn_matmul_w2v, self.embedded_chars, initializer=initializer)
             print '[WU_w2v]', WU_w2v
 
-            initializer = tf.constant(np.zeros([embedding_size_lex, attention_depth]), dtype=tf.float32)
+            initializer = tf.constant(np.zeros([sequence_length, attention_depth]), dtype=tf.float32)
             LU_lex = tf.scan(fn_matmul_lex, self.embedded_chars_lexicon, initializer=initializer)
             print '[LU_lex]', LU_lex
 
