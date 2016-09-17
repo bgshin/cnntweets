@@ -12,6 +12,7 @@ from cnn_models.w2v_cnn import W2V_CNN
 from cnn_models.preattention_cnn import TextCNNPreAttention, TextCNNPreAttentionBias
 from cnn_models.preattention_cnn import TextCNNAttention2Vec, TextCNNAttention2VecIndividual
 from cnn_models.preattention_cnn import TextCNNAttention2VecIndividualBias
+from cnn_models.preattention_cnn import TextCNNAttention2VecIndividualW2v, TextCNNAttention2VecIndividualLex
 
 
 from utils.word2vecReader import Word2Vec
@@ -454,6 +455,58 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                     attention_depth_lex=attention_depth_lex,
                     l2_reg_lambda=FLAGS.l2_reg_lambda)
 
+            elif model_name == 'a2vindw2v':
+                cnn = TextCNNAttention2VecIndividualW2v(
+                    sequence_length=x_train.shape[1],
+                    num_classes=3,
+                    embedding_size=w2vdim,
+                    embedding_size_lex=lexdim,
+                    num_filters_lex=lexnumfilters,
+                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
+                    num_filters=w2vnumfilters,
+                    attention_depth_w2v=attention_depth_w2v,
+                    attention_depth_lex=attention_depth_lex,
+                    l2_reg_lambda=FLAGS.l2_reg_lambda)
+
+            elif model_name == 'a2vindw2vrt':
+                cnn = TextCNNAttention2VecIndividualW2v(
+                    sequence_length=x_train.shape[1],
+                    num_classes=5,
+                    embedding_size=w2vdim,
+                    embedding_size_lex=lexdim,
+                    num_filters_lex=lexnumfilters,
+                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
+                    num_filters=w2vnumfilters,
+                    attention_depth_w2v=attention_depth_w2v,
+                    attention_depth_lex=attention_depth_lex,
+                    l2_reg_lambda=FLAGS.l2_reg_lambda)
+
+            elif model_name == 'a2vindlex':
+                cnn = TextCNNAttention2VecIndividualLex(
+                    sequence_length=x_train.shape[1],
+                    num_classes=3,
+                    embedding_size=w2vdim,
+                    embedding_size_lex=lexdim,
+                    num_filters_lex=lexnumfilters,
+                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
+                    num_filters=w2vnumfilters,
+                    attention_depth_w2v=attention_depth_w2v,
+                    attention_depth_lex=attention_depth_lex,
+                    l2_reg_lambda=FLAGS.l2_reg_lambda)
+
+            elif model_name == 'a2vindlexrt':
+                cnn = TextCNNAttention2VecIndividualLex(
+                    sequence_length=x_train.shape[1],
+                    num_classes=5,
+                    embedding_size=w2vdim,
+                    embedding_size_lex=lexdim,
+                    num_filters_lex=lexnumfilters,
+                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
+                    num_filters=w2vnumfilters,
+                    attention_depth_w2v=attention_depth_w2v,
+                    attention_depth_lex=attention_depth_lex,
+                    l2_reg_lambda=FLAGS.l2_reg_lambda)
+
             else: # default is w2vlex
                 cnn = W2V_LEX_CNN(
                     sequence_length=x_train.shape[1],
@@ -687,7 +740,8 @@ if __name__ == "__main__":
     parser.add_argument('--randomseed', default=1, type=int)
     parser.add_argument('--model', default='a2vind', choices=['w2v', 'w2vrt', 'w2vlex', 'w2vrtlex',
                                                             'att', 'attrt', 'attb', 'attbrt', 'a2v', 'a2vrt',
-                                                              'a2vind', 'a2vindrt', 'a2vindb', 'a2vindbrt'],
+                                                              'a2vind', 'a2vindrt', 'a2vindb', 'a2vindbrt',
+                                                              'a2vindw2v', 'a2vindw2vrt', 'a2vindlex', 'a2vindlexrt'],
                         type=str)  # w2v, w2vlex, attention
     parser.add_argument('--expanded', default=1234567, choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 1234567], type=int)
     parser.add_argument('--attdepthw2v', default=60, type=int)
