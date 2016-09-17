@@ -9,7 +9,9 @@ from utils import cnn_data_helpers
 from utils.butils import Timer
 from cnn_models.w2v_lex_cnn import W2V_LEX_CNN
 from cnn_models.w2v_cnn import W2V_CNN
-from cnn_models.preattention_cnn import TextCNNPreAttention, TextCNNPreAttentionBias, TextCNNAttention2Vec
+from cnn_models.preattention_cnn import TextCNNPreAttention, TextCNNPreAttentionBias
+from cnn_models.preattention_cnn import TextCNNAttention2Vec, TextCNNAttention2VecIndividual
+
 from utils.word2vecReader import Word2Vec
 import time
 import gc
@@ -181,7 +183,7 @@ def load_lexicon_unigram(lexdim):
 
 
 def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, model_name, is_expanded,
-              simple_run=True):
+              attention_depth, simple_run=True):
     if simple_run == True:
         print '======================================[simple_run]======================================'
 
@@ -376,7 +378,6 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                     num_filters=w2vnumfilters,
                     l2_reg_lambda=FLAGS.l2_reg_lambda)
 
-
             elif model_name == 'a2v':
                 cnn = TextCNNAttention2Vec(
                     sequence_length=x_train.shape[1],
@@ -397,6 +398,30 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                     num_filters_lex=lexnumfilters,
                     filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
                     num_filters=w2vnumfilters,
+                    l2_reg_lambda=FLAGS.l2_reg_lambda)
+
+            elif model_name == 'a2vind':
+                cnn = TextCNNAttention2VecIndividual(
+                    sequence_length=x_train.shape[1],
+                    num_classes=3,
+                    embedding_size=w2vdim,
+                    embedding_size_lex=lexdim,
+                    num_filters_lex=lexnumfilters,
+                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
+                    num_filters=w2vnumfilters,
+                    attention_depth=attention_depth,
+                    l2_reg_lambda=FLAGS.l2_reg_lambda)
+
+            elif model_name == 'a2vindrt':
+                cnn = TextCNNAttention2VecIndividual(
+                    sequence_length=x_train.shape[1],
+                    num_classes=5,
+                    embedding_size=w2vdim,
+                    embedding_size_lex=lexdim,
+                    num_filters_lex=lexnumfilters,
+                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
+                    num_filters=w2vnumfilters,
+                    attention_depth=attention_depth,
                     l2_reg_lambda=FLAGS.l2_reg_lambda)
 
             else: # default is w2vlex
@@ -630,10 +655,13 @@ if __name__ == "__main__":
     parser.add_argument('--lexdim', default=15, type=int)
     parser.add_argument('--lexnumfilters', default=9, type=int)
     parser.add_argument('--randomseed', default=1, type=int)
-    parser.add_argument('--model', default='attb', choices=['w2v', 'w2vrt', 'w2vlex', 'w2vrtlex',
-                                                            'att', 'attrt', 'attb', 'attbrt', 'a2v', 'a2vrt'],
+    parser.add_argument('--model', default='a2vind', choices=['w2v', 'w2vrt', 'w2vlex', 'w2vrtlex',
+                                                            'att', 'attrt', 'attb', 'attbrt', 'a2v', 'a2vrt',
+                                                              'a2vind', 'a2vindrt'],
                         type=str)  # w2v, w2vlex, attention
     parser.add_argument('--expanded', default=1234567, choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 1234567], type=int)
+    parser.add_argument('--attdepth', default=60, type=int)
+
 
     args = parser.parse_args()
     program = os.path.basename(sys.argv[0])
@@ -644,7 +672,7 @@ if __name__ == "__main__":
              args.model, args.expanded)
 
     run_train(args.w2vsource, args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed,
-              args.model, args.expanded, simple_run=False)
+              args.model, args.expanded, args.attdepth, simple_run=False)
     # run_train(args.w2vsource, args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed,
     #           args.model, simple_run=True)
 
