@@ -630,7 +630,8 @@ if __name__ == "__main__":
     parser.add_argument('--lexdim', default=15, type=int)
     parser.add_argument('--lexnumfilters', default=9, type=int)
     parser.add_argument('--randomseed', default=1, type=int)
-    parser.add_argument('--model', default='a2v', choices=['w2v', 'w2vrt', 'w2vlex', 'w2vrtlex', 'att', 'attrt'],
+    parser.add_argument('--model', default='attb', choices=['w2v', 'w2vrt', 'w2vlex', 'w2vrtlex',
+                                                            'att', 'attrt', 'attb', 'attbrt', 'a2v', 'a2vrt'],
                         type=str)  # w2v, w2vlex, attention
     parser.add_argument('--expanded', default=1234567, choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 1234567], type=int)
 
