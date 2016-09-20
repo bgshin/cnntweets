@@ -185,6 +185,9 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
     max_len = 60
     norm_model = []
 
+    rt_list = ['w2vrt', 'w2vlexrt', 'attrt', 'attbrt', 'a2vrt', 'a2vindrt', 'a2vindbrt', 'a2vindw2vrt',
+               'a2vindlexrt', 'cnna2vindrt', 'cnna2vindw2vrt', 'cnna2vindlexrt', ]
+
     with Timer("lex"):
         if is_expanded == 0:
             print 'old way of loading lexicon'
@@ -241,10 +244,16 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                     norm_model.append(each_model)
 
     with Timer("w2v"):
-        if w2vsource == "twitter":
-            w2vmodel = load_w2v(w2vdim, simple_run=simple_run)
-        else:
-            w2vmodel = load_w2v(w2vdim, simple_run=simple_run, source="amazon")
+        w2vmodel = load_w2v(w2vdim, simple_run=simple_run, source=w2vsource)
+        # if w2vsource == "twitter":
+        #     w2vmodel = load_w2v(w2vdim, simple_run=simple_run, source=w2vsource)
+        # else:
+        #     w2vmodel = load_w2v(w2vdim, simple_run=simple_run, source="amazon")
+
+
+    rt_data = False
+    if model_name in rt_list:
+        rt_data = True
 
     unigram_lexicon_model = norm_model
     # unigram_lexicon_model = raw_model
@@ -254,15 +263,12 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                                                                    max_len)
         x_dev, y_dev, x_lex_dev = cnn_data_helpers.load_data('dev_sample', w2vmodel, unigram_lexicon_model, max_len)
         x_test, y_test, x_lex_test = cnn_data_helpers.load_data('tst_sample', w2vmodel, unigram_lexicon_model, max_len)
-    elif model_name == "w2vrt" or model_name == "w2vlexrt":
-        x_train, y_train, x_lex_train = cnn_data_helpers.load_data('trn', w2vmodel, unigram_lexicon_model, max_len,
-                                                                   True)
-        x_dev, y_dev, x_lex_dev = cnn_data_helpers.load_data('dev', w2vmodel, unigram_lexicon_model, max_len, True)
-        x_test, y_test, x_lex_test = cnn_data_helpers.load_data('tst', w2vmodel, unigram_lexicon_model, max_len, True)
     else:
-        x_train, y_train, x_lex_train = cnn_data_helpers.load_data('trn', w2vmodel, unigram_lexicon_model, max_len)
-        x_dev, y_dev, x_lex_dev = cnn_data_helpers.load_data('dev', w2vmodel, unigram_lexicon_model, max_len)
-        x_test, y_test, x_lex_test = cnn_data_helpers.load_data('tst', w2vmodel, unigram_lexicon_model, max_len)
+        x_train, y_train, x_lex_train = cnn_data_helpers.load_data('trn', w2vmodel, unigram_lexicon_model, max_len,
+                                                                   rt_data)
+        x_dev, y_dev, x_lex_dev = cnn_data_helpers.load_data('dev', w2vmodel, unigram_lexicon_model, max_len, rt_data)
+        x_test, y_test, x_lex_test = cnn_data_helpers.load_data('tst', w2vmodel, unigram_lexicon_model, max_len,
+                                                                rt_data)
 
     del (w2vmodel)
     del (norm_model)
@@ -288,8 +294,6 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
             if randomseed > 0:
                 tf.set_random_seed(randomseed)
 
-            rt_list = ['w2vrt', 'w2vlexrt', 'attrt', 'attbrt', 'a2vrt', 'a2vindrt', 'a2vindbrt', 'a2vindw2vrt',
-                       'a2vindlexrt', 'cnna2vindrt', 'cnna2vindw2vrt', 'cnna2vindlexrt', ]
             num_classes = 3
             if model_name in rt_list:
                 num_classes = 5
