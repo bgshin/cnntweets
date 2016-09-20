@@ -11,7 +11,8 @@ class TextCNNPreAttention(object):
     """
     def __init__(
       self, sequence_length, num_classes,
-      embedding_size, filter_sizes, num_filters, embedding_size_lex, num_filters_lex, l2_reg_lambda=0.0):
+      embedding_size, filter_sizes, num_filters, embedding_size_lex, num_filters_lex, l2_reg_lambda=0.0,
+            l1_reg_lambda=0.0):
         # sequence_length_lex = 30
         # Placeholders for input, output and dropout
         self.input_x = tf.placeholder(tf.float32, [None, sequence_length, embedding_size], name="input_x")
@@ -257,7 +258,8 @@ class TextCNNPreAttentionBias(object):
     """
     def __init__(
       self, sequence_length, num_classes,
-      embedding_size, filter_sizes, num_filters, embedding_size_lex, num_filters_lex, l2_reg_lambda=0.0):
+      embedding_size, filter_sizes, num_filters, embedding_size_lex, num_filters_lex, l2_reg_lambda=0.0,
+            l1_reg_lambda=0.0):
         # sequence_length_lex = 30
         # Placeholders for input, output and dropout
         self.input_x = tf.placeholder(tf.float32, [None, sequence_length, embedding_size], name="input_x")
@@ -512,7 +514,8 @@ class TextCNNPreAttentionBias(object):
 class TextAttention2Vec(object):
     def __init__(
       self, sequence_length, num_classes,
-      embedding_size, filter_sizes, num_filters, embedding_size_lex, num_filters_lex, l2_reg_lambda=0.0):
+      embedding_size, filter_sizes, num_filters, embedding_size_lex, num_filters_lex, l2_reg_lambda=0.0,
+            l1_reg_lambda=0.0):
         # Placeholders for input, output and dropout
         self.input_x = tf.placeholder(tf.float32, [None, sequence_length, embedding_size], name="input_x")
         self.input_y = tf.placeholder(tf.float32, [None, num_classes], name="input_y")
@@ -686,7 +689,7 @@ class TextAttention2VecIndividual(object):
     def __init__(
       self, sequence_length, num_classes,
       embedding_size, filter_sizes, num_filters, embedding_size_lex, num_filters_lex, attention_depth_w2v,
-            attention_depth_lex, l2_reg_lambda=0.0):
+            attention_depth_lex, l2_reg_lambda=0.0, l1_reg_lambda=0.0):
         # Placeholders for input, output and dropout
         self.input_x = tf.placeholder(tf.float32, [None, sequence_length, embedding_size], name="input_x")
         self.input_y = tf.placeholder(tf.float32, [None, num_classes], name="input_y")
@@ -869,7 +872,7 @@ class TextAttention2VecIndividualBias(object):
     def __init__(
       self, sequence_length, num_classes,
       embedding_size, filter_sizes, num_filters, embedding_size_lex, num_filters_lex, attention_depth_w2v,
-            attention_depth_lex, l2_reg_lambda=0.0):
+            attention_depth_lex, l2_reg_lambda=0.0, l1_reg_lambda=0.0):
         # Placeholders for input, output and dropout
         self.input_x = tf.placeholder(tf.float32, [None, sequence_length, embedding_size], name="input_x")
         self.input_y = tf.placeholder(tf.float32, [None, num_classes], name="input_y")
@@ -1057,7 +1060,7 @@ class TextAttention2VecIndividualW2v(object):
     def __init__(
       self, sequence_length, num_classes,
       embedding_size, filter_sizes, num_filters, embedding_size_lex, num_filters_lex, attention_depth_w2v,
-            attention_depth_lex, l2_reg_lambda=0.0):
+            attention_depth_lex, l2_reg_lambda=0.0, l1_reg_lambda=0.0):
         # Placeholders for input, output and dropout
         self.input_x = tf.placeholder(tf.float32, [None, sequence_length, embedding_size], name="input_x")
         self.input_y = tf.placeholder(tf.float32, [None, num_classes], name="input_y")
@@ -1240,7 +1243,7 @@ class TextAttention2VecIndividualLex(object):
     def __init__(
       self, sequence_length, num_classes,
       embedding_size, filter_sizes, num_filters, embedding_size_lex, num_filters_lex, attention_depth_w2v,
-            attention_depth_lex, l2_reg_lambda=0.0):
+            attention_depth_lex, l2_reg_lambda=0.0, l1_reg_lambda=0.0):
         # Placeholders for input, output and dropout
         self.input_x = tf.placeholder(tf.float32, [None, sequence_length, embedding_size], name="input_x")
         self.input_y = tf.placeholder(tf.float32, [None, num_classes], name="input_y")
@@ -1930,7 +1933,7 @@ class TextCNNAttention2VecIndividualLex(object):
     def __init__(
       self, sequence_length, num_classes,
       embedding_size, filter_sizes, num_filters, embedding_size_lex, num_filters_lex, attention_depth_w2v,
-            attention_depth_lex, l2_reg_lambda=0.0):
+            attention_depth_lex, l2_reg_lambda=0.0, l1_reg_lambda=0.0):
         # sequence_length_lex = 30
         # Placeholders for input, output and dropout
         self.input_x = tf.placeholder(tf.float32, [None, sequence_length, embedding_size], name="input_x")

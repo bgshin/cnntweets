@@ -9,7 +9,7 @@ class W2V_CNN(object):
     """
     def __init__(
       self, sequence_length, num_classes,
-      embedding_size, filter_sizes, num_filters, l2_reg_lambda=0.0):
+      embedding_size, filter_sizes, num_filters, l2_reg_lambda=0.0, l1_reg_lambda=0.0):
 
         # Placeholders for input, output and dropout
         self.input_x = tf.placeholder(tf.float32, [None, sequence_length, embedding_size], name="input_x")
@@ -18,6 +18,7 @@ class W2V_CNN(object):
 
         # Keeping track of l2 regularization loss (optional)
         l2_loss = tf.constant(0.0)
+        l1_loss = tf.constant(0.0)
 
         # Embedding layer
         with tf.device('/cpu:0'), tf.name_scope("embedding"):
