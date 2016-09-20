@@ -414,7 +414,8 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                     num_filters=w2vnumfilters,
                     attention_depth_w2v=attention_depth_w2v,
                     attention_depth_lex=attention_depth_lex,
-                    l2_reg_lambda=FLAGS.l2_reg_lambda)
+                    l2_reg_lambda=FLAGS.l2_reg_lambda,
+                    l1_reg_lambda=FLAGS.l1_reg_lambda)
 
             elif model_name == 'cnna2vindw2v' or model_name == 'cnna2vindw2vrt':
                 cnn = TextCNNAttention2VecIndividualW2v(
@@ -427,7 +428,8 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                     num_filters=w2vnumfilters,
                     attention_depth_w2v=attention_depth_w2v,
                     attention_depth_lex=attention_depth_lex,
-                    l2_reg_lambda=FLAGS.l2_reg_lambda)
+                    l2_reg_lambda=FLAGS.l2_reg_lambda,
+                    l1_reg_lambda=FLAGS.l1_reg_lambda)
 
             elif model_name == 'cnna2vindlex' or model_name == 'cnna2vindlexrt':
                 cnn = TextCNNAttention2VecIndividualLex(
