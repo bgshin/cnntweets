@@ -36,7 +36,7 @@ tf.flags.DEFINE_float("l2_reg_lambda", 2.0, "L2 regularizaion lambda (default: 0
 
 # Training parameters
 tf.flags.DEFINE_integer("batch_size", 64, "Batch Size (default: 64)")
-tf.flags.DEFINE_integer("num_epochs", 30, "Number of training epochs (default: 200)")
+# tf.flags.DEFINE_integer("num_epochs", 30, "Number of training epochs (default: 200)")
 tf.flags.DEFINE_integer("evaluate_every", 100, "Evaluate model on dev set after this many steps (default: 100)")
 tf.flags.DEFINE_integer("test_every", 100000, "Evaluate model on test set after this many steps (default: 100)")
 tf.flags.DEFINE_integer("checkpoint_every", 10000, "Save model after this many steps (default: 100)")
@@ -178,7 +178,7 @@ def load_lexicon_unigram(lexdim):
 
 
 def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomseed, model_name, is_expanded,
-              attention_depth_w2v, attention_depth_lex, simple_run=True):
+              attention_depth_w2v, attention_depth_lex, num_epochs, simple_run=True):
     if simple_run == True:
         print '======================================[simple_run]======================================'
 
@@ -601,7 +601,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
 
             # Generate batches
             batches = cnn_data_helpers.batch_iter(
-                list(zip(x_train, y_train, x_lex_train)), FLAGS.batch_size, FLAGS.num_epochs)
+                list(zip(x_train, y_train, x_lex_train)), FLAGS.batch_size, num_epochs)
             # Training loop. For each batch...
             for batch in batches:
                 x_batch, y_batch, x_batch_lex = zip(*batch)
@@ -705,18 +705,19 @@ if __name__ == "__main__":
     parser.add_argument('--expanded', default=8, choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 1234567], type=int)
     parser.add_argument('--attdepthw2v', default=50, type=int)
     parser.add_argument('--attdepthlex', default=20, type=int)
+    parser.add_argument('--num_epochs', default=30, type=int)
 
 
     args = parser.parse_args()
     program = os.path.basename(sys.argv[0])
 
     print 'ADDITIONAL PARAMETER\n w2vsource: %s\n w2vdim: %d\n w2vnumfilters: %d\n lexdim: %d\n lexnumfilters: %d\n ' \
-          'randomseed: %d\n model_name: %s\n expanded: %d\n attdepthw2v: %s\n attdepthlex: %s' \
+          'randomseed: %d\n model_name: %s\n expanded: %d\n attdepthw2v: %s\n attdepthlex: %s\n num_epochs: %d\n' \
           % (args.w2vsource, args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed,
-             args.model, args.expanded, args.attdepthw2v, args.attdepthlex)
+             args.model, args.expanded, args.attdepthw2v, args.attdepthlex, args.num_epochs)
 
     run_train(args.w2vsource, args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed,
-              args.model, args.expanded, args.attdepthw2v, args.attdepthlex, simple_run=False)
+              args.model, args.expanded, args.attdepthw2v, args.attdepthlex, args.num_epochs, simple_run=False)
     # run_train(args.w2vsource, args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed,
     #           args.model, simple_run=True)
 
