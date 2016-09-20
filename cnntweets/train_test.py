@@ -266,7 +266,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                                                                    max_len)
         x_dev, y_dev, x_lex_dev = cnn_data_helpers.load_data('dev_sample', w2vmodel, unigram_lexicon_model, max_len)
         x_test, y_test, x_lex_test = cnn_data_helpers.load_data('tst_sample', w2vmodel, unigram_lexicon_model, max_len)
-    elif model_name == "w2vrt" or model_name == "w2vrtlex":
+    elif model_name == "w2vrt" or model_name == "w2vlexrt":
         x_train, y_train, x_lex_train = cnn_data_helpers.load_data('trn', w2vmodel, unigram_lexicon_model, max_len,
                                                                    True)
         x_dev, y_dev, x_lex_dev = cnn_data_helpers.load_data('dev', w2vmodel, unigram_lexicon_model, max_len, True)
@@ -300,29 +300,25 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
             if randomseed > 0:
                 tf.set_random_seed(randomseed)
 
-            if model_name == 'w2v':
+            rt_list = ['w2vrt', 'w2vlexrt', 'attrt', 'attbrt', 'a2vrt', 'a2vindrt', 'a2vindbrt', 'a2vindw2vrt',
+                       'a2vindlexrt', 'cnna2vindrt', 'cnna2vindw2vrt', 'cnna2vindlexrt', ]
+            num_classes = 3
+            if model_name in rt_list:
+                num_classes = 5
+
+            if model_name == 'w2v' or model_name == 'w2vrt':
                 cnn = W2V_CNN(
                     sequence_length=x_train.shape[1],
-                    num_classes=3,
+                    num_classes=num_classes,
                     embedding_size=w2vdim,
                     filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
                     num_filters=w2vnumfilters,
                     l2_reg_lambda=FLAGS.l2_reg_lambda
                 )
-            elif model_name == 'w2vrt':
-                cnn = W2V_CNN(
-                    sequence_length=x_train.shape[1],
-                    num_classes=5,
-                    embedding_size=w2vdim,
-                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
-                    num_filters=w2vnumfilters,
-                    l2_reg_lambda=FLAGS.l2_reg_lambda
-                )
-
-            elif model_name == 'w2vlex':
+            elif model_name == 'w2vlex' or model_name == 'w2vlexrt':
                 cnn = W2V_LEX_CNN(
                     sequence_length=x_train.shape[1],
-                    num_classes=3,
+                    num_classes=num_classes,
                     embedding_size=w2vdim,
                     embedding_size_lex=lexdim,
                     num_filters_lex=lexnumfilters,
@@ -330,21 +326,10 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                     num_filters=w2vnumfilters,
                     l2_reg_lambda=FLAGS.l2_reg_lambda)
 
-            elif model_name == 'w2vrtlex':
-                cnn = W2V_LEX_CNN(
-                    sequence_length=x_train.shape[1],
-                    num_classes=5,
-                    embedding_size=w2vdim,
-                    embedding_size_lex=lexdim,
-                    num_filters_lex=lexnumfilters,
-                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
-                    num_filters=w2vnumfilters,
-                    l2_reg_lambda=FLAGS.l2_reg_lambda)
-
-            elif model_name == 'att':
+            elif model_name == 'att' or model_name == 'attrt':
                 cnn = TextCNNPreAttention(
                     sequence_length=x_train.shape[1],
-                    num_classes=3,
+                    num_classes=num_classes,
                     embedding_size=w2vdim,
                     embedding_size_lex=lexdim,
                     num_filters_lex=lexnumfilters,
@@ -352,21 +337,10 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                     num_filters=w2vnumfilters,
                     l2_reg_lambda=FLAGS.l2_reg_lambda)
 
-            elif model_name == 'attrt':
-                cnn = TextCNNPreAttention(
-                    sequence_length=x_train.shape[1],
-                    num_classes=5,
-                    embedding_size=w2vdim,
-                    embedding_size_lex=lexdim,
-                    num_filters_lex=lexnumfilters,
-                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
-                    num_filters=w2vnumfilters,
-                    l2_reg_lambda=FLAGS.l2_reg_lambda)
-
-            elif model_name == 'attb':
+            elif model_name == 'attb' or model_name == 'attbrt':
                 cnn = TextCNNPreAttentionBias(
                     sequence_length=x_train.shape[1],
-                    num_classes=3,
+                    num_classes=num_classes,
                     embedding_size=w2vdim,
                     embedding_size_lex=lexdim,
                     num_filters_lex=lexnumfilters,
@@ -374,21 +348,10 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                     num_filters=w2vnumfilters,
                     l2_reg_lambda=FLAGS.l2_reg_lambda)
 
-            elif model_name == 'attbrt':
-                cnn = TextCNNPreAttentionBias(
-                    sequence_length=x_train.shape[1],
-                    num_classes=5,
-                    embedding_size=w2vdim,
-                    embedding_size_lex=lexdim,
-                    num_filters_lex=lexnumfilters,
-                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
-                    num_filters=w2vnumfilters,
-                    l2_reg_lambda=FLAGS.l2_reg_lambda)
-
-            elif model_name == 'a2v':
+            elif model_name == 'a2v' or model_name == 'a2vrt':
                 cnn = TextAttention2Vec(
                     sequence_length=x_train.shape[1],
-                    num_classes=3,
+                    num_classes=num_classes,
                     embedding_size=w2vdim,
                     embedding_size_lex=lexdim,
                     num_filters_lex=lexnumfilters,
@@ -396,21 +359,10 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                     num_filters=w2vnumfilters,
                     l2_reg_lambda=FLAGS.l2_reg_lambda)
 
-            elif model_name == 'a2vrt':
-                cnn = TextAttention2Vec(
-                    sequence_length=x_train.shape[1],
-                    num_classes=5,
-                    embedding_size=w2vdim,
-                    embedding_size_lex=lexdim,
-                    num_filters_lex=lexnumfilters,
-                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
-                    num_filters=w2vnumfilters,
-                    l2_reg_lambda=FLAGS.l2_reg_lambda)
-
-            elif model_name == 'a2vind':
+            elif model_name == 'a2vind' or model_name == 'a2vindrt':
                 cnn = TextAttention2VecIndividual(
                     sequence_length=x_train.shape[1],
-                    num_classes=3,
+                    num_classes=num_classes,
                     embedding_size=w2vdim,
                     embedding_size_lex=lexdim,
                     num_filters_lex=lexnumfilters,
@@ -420,23 +372,10 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                     attention_depth_lex=attention_depth_lex,
                     l2_reg_lambda=FLAGS.l2_reg_lambda)
 
-            elif model_name == 'a2vindrt':
-                cnn = TextAttention2VecIndividual(
-                    sequence_length=x_train.shape[1],
-                    num_classes=5,
-                    embedding_size=w2vdim,
-                    embedding_size_lex=lexdim,
-                    num_filters_lex=lexnumfilters,
-                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
-                    num_filters=w2vnumfilters,
-                    attention_depth_w2v=attention_depth_w2v,
-                    attention_depth_lex=attention_depth_lex,
-                    l2_reg_lambda=FLAGS.l2_reg_lambda)
-
-            elif model_name == 'a2vindb':
+            elif model_name == 'a2vindb' or model_name == 'a2vindbrt':
                 cnn = TextAttention2VecIndividualBias(
                     sequence_length=x_train.shape[1],
-                    num_classes=3,
+                    num_classes=num_classes,
                     embedding_size=w2vdim,
                     embedding_size_lex=lexdim,
                     num_filters_lex=lexnumfilters,
@@ -446,23 +385,10 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                     attention_depth_lex=attention_depth_lex,
                     l2_reg_lambda=FLAGS.l2_reg_lambda)
 
-            elif model_name == 'a2vindbrt':
-                cnn = TextAttention2VecIndividualBias(
-                    sequence_length=x_train.shape[1],
-                    num_classes=5,
-                    embedding_size=w2vdim,
-                    embedding_size_lex=lexdim,
-                    num_filters_lex=lexnumfilters,
-                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
-                    num_filters=w2vnumfilters,
-                    attention_depth_w2v=attention_depth_w2v,
-                    attention_depth_lex=attention_depth_lex,
-                    l2_reg_lambda=FLAGS.l2_reg_lambda)
-
-            elif model_name == 'a2vindw2v':
+            elif model_name == 'a2vindw2v' or model_name == 'a2vindw2vrt':
                 cnn = TextAttention2VecIndividualW2v(
                     sequence_length=x_train.shape[1],
-                    num_classes=3,
+                    num_classes=num_classes,
                     embedding_size=w2vdim,
                     embedding_size_lex=lexdim,
                     num_filters_lex=lexnumfilters,
@@ -472,23 +398,10 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                     attention_depth_lex=attention_depth_lex,
                     l2_reg_lambda=FLAGS.l2_reg_lambda)
 
-            elif model_name == 'a2vindw2vrt':
-                cnn = TextAttention2VecIndividualW2v(
-                    sequence_length=x_train.shape[1],
-                    num_classes=5,
-                    embedding_size=w2vdim,
-                    embedding_size_lex=lexdim,
-                    num_filters_lex=lexnumfilters,
-                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
-                    num_filters=w2vnumfilters,
-                    attention_depth_w2v=attention_depth_w2v,
-                    attention_depth_lex=attention_depth_lex,
-                    l2_reg_lambda=FLAGS.l2_reg_lambda)
-
-            elif model_name == 'a2vindlex':
+            elif model_name == 'a2vindlex' or model_name == 'a2vindw2vrt':
                 cnn = TextAttention2VecIndividualLex(
                     sequence_length=x_train.shape[1],
-                    num_classes=3,
+                    num_classes=num_classes,
                     embedding_size=w2vdim,
                     embedding_size_lex=lexdim,
                     num_filters_lex=lexnumfilters,
@@ -498,23 +411,10 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                     attention_depth_lex=attention_depth_lex,
                     l2_reg_lambda=FLAGS.l2_reg_lambda)
 
-            elif model_name == 'a2vindlexrt':
-                cnn = TextAttention2VecIndividualLex(
-                    sequence_length=x_train.shape[1],
-                    num_classes=5,
-                    embedding_size=w2vdim,
-                    embedding_size_lex=lexdim,
-                    num_filters_lex=lexnumfilters,
-                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
-                    num_filters=w2vnumfilters,
-                    attention_depth_w2v=attention_depth_w2v,
-                    attention_depth_lex=attention_depth_lex,
-                    l2_reg_lambda=FLAGS.l2_reg_lambda)
-
-            elif model_name == 'cnna2vind':
+            elif model_name == 'cnna2vind' or model_name == 'cnna2vindrt':
                 cnn = TextCNNAttention2VecIndividual(
                     sequence_length=x_train.shape[1],
-                    num_classes=3,
+                    num_classes=num_classes,
                     embedding_size=w2vdim,
                     embedding_size_lex=lexdim,
                     num_filters_lex=lexnumfilters,
@@ -524,23 +424,10 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                     attention_depth_lex=attention_depth_lex,
                     l2_reg_lambda=FLAGS.l2_reg_lambda)
 
-            elif model_name == 'cnna2vindrt':
-                cnn = TextCNNAttention2VecIndividual(
-                    sequence_length=x_train.shape[1],
-                    num_classes=5,
-                    embedding_size=w2vdim,
-                    embedding_size_lex=lexdim,
-                    num_filters_lex=lexnumfilters,
-                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
-                    num_filters=w2vnumfilters,
-                    attention_depth_w2v=attention_depth_w2v,
-                    attention_depth_lex=attention_depth_lex,
-                    l2_reg_lambda=FLAGS.l2_reg_lambda)
-
-            elif model_name == 'cnna2vindw2v':
+            elif model_name == 'cnna2vindw2v' or model_name == 'cnna2vindw2vrt':
                 cnn = TextCNNAttention2VecIndividualW2v(
                     sequence_length=x_train.shape[1],
-                    num_classes=3,
+                    num_classes=num_classes,
                     embedding_size=w2vdim,
                     embedding_size_lex=lexdim,
                     num_filters_lex=lexnumfilters,
@@ -550,36 +437,10 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                     attention_depth_lex=attention_depth_lex,
                     l2_reg_lambda=FLAGS.l2_reg_lambda)
 
-            elif model_name == 'cnna2vindw2vrt':
-                cnn = TextCNNAttention2VecIndividualW2v(
-                    sequence_length=x_train.shape[1],
-                    num_classes=5,
-                    embedding_size=w2vdim,
-                    embedding_size_lex=lexdim,
-                    num_filters_lex=lexnumfilters,
-                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
-                    num_filters=w2vnumfilters,
-                    attention_depth_w2v=attention_depth_w2v,
-                    attention_depth_lex=attention_depth_lex,
-                    l2_reg_lambda=FLAGS.l2_reg_lambda)
-
-            elif model_name == 'cnna2vindlex':
+            elif model_name == 'cnna2vindlex' or model_name == 'cnna2vindlexrt':
                 cnn = TextCNNAttention2VecIndividualLex(
                     sequence_length=x_train.shape[1],
-                    num_classes=3,
-                    embedding_size=w2vdim,
-                    embedding_size_lex=lexdim,
-                    num_filters_lex=lexnumfilters,
-                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
-                    num_filters=w2vnumfilters,
-                    attention_depth_w2v=attention_depth_w2v,
-                    attention_depth_lex=attention_depth_lex,
-                    l2_reg_lambda=FLAGS.l2_reg_lambda)
-
-            elif model_name == 'cnna2vindlexrt':
-                cnn = TextCNNAttention2VecIndividualLex(
-                    sequence_length=x_train.shape[1],
-                    num_classes=5,
+                    num_classes=num_classes,
                     embedding_size=w2vdim,
                     embedding_size_lex=lexdim,
                     num_filters_lex=lexnumfilters,
@@ -592,7 +453,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
             else: # default is w2vlex
                 cnn = W2V_LEX_CNN(
                     sequence_length=x_train.shape[1],
-                    num_classes=3,
+                    num_classes=num_classes,
                     embedding_size=w2vdim,
                     embedding_size_lex=lexdim,
                     num_filters_lex=lexnumfilters,
@@ -775,7 +636,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                         curr_af1_dev = dev_step(x_dev, y_dev, writer=dev_summary_writer, score_type='acc')
                         curr_af1_tst = test_step(x_test, y_test, writer=test_summary_writer, score_type='acc')
 
-                    elif model_name == 'w2vrtlex':
+                    elif model_name == 'w2vlexrt':
                         curr_af1_dev = dev_step(x_dev, y_dev, x_lex_dev, writer=dev_summary_writer, score_type='acc')
                         curr_af1_tst = test_step(x_test, y_test, x_lex_test, writer=test_summary_writer,
                                                  score_type='acc')
@@ -820,7 +681,7 @@ if __name__ == "__main__":
     parser.add_argument('--lexdim', default=15, type=int)
     parser.add_argument('--lexnumfilters', default=9, type=int)
     parser.add_argument('--randomseed', default=1, type=int)
-    parser.add_argument('--model', default='a2vind', choices=['w2v', 'w2vrt', 'w2vlex', 'w2vrtlex',
+    parser.add_argument('--model', default='a2vind', choices=['w2v', 'w2vrt', 'w2vlex', 'w2vlexrt',
                                                             'att', 'attrt', 'attb', 'attbrt', 'a2v', 'a2vrt',
                                                               'a2vind', 'a2vindrt', 'a2vindb', 'a2vindbrt',
                                                               'a2vindw2v', 'a2vindw2vrt', 'a2vindlex', 'a2vindlexrt',
