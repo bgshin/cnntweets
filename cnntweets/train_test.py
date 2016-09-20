@@ -614,32 +614,46 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                 current_step = tf.train.global_step(sess, global_step)
                 if current_step % FLAGS.evaluate_every == 0:
                     print("Evaluation:")
-
-                    if model_name == 'w2v':
-                        curr_af1_dev = dev_step(x_dev, y_dev, writer=dev_summary_writer)
-                        # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
-                        # print("Saved model checkpoint to {}\n".format(path))
-
-                        curr_af1_tst = test_step(x_test, y_test, writer=test_summary_writer)
-                        # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
-                        # print("Saved model checkpoint to {}\n".format(path))
-
-                    elif model_name == 'w2vrt':
-                        curr_af1_dev = dev_step(x_dev, y_dev, writer=dev_summary_writer, score_type='acc')
-                        curr_af1_tst = test_step(x_test, y_test, writer=test_summary_writer, score_type='acc')
-
-                    elif model_name == 'w2vlexrt':
-                        curr_af1_dev = dev_step(x_dev, y_dev, x_lex_dev, writer=dev_summary_writer, score_type='acc')
-                        curr_af1_tst = test_step(x_test, y_test, x_lex_test, writer=test_summary_writer,
-                                                 score_type='acc')
+                    if rt_data == True:
+                        score_type = 'acc'
                     else:
-                        curr_af1_dev = dev_step(x_dev, y_dev, x_lex_dev, writer=dev_summary_writer)
-                        # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
-                        # print("Saved model checkpoint to {}\n".format(path))
+                        score_type = 'f1'
 
-                        curr_af1_tst = test_step(x_test, y_test, x_lex_test, writer=test_summary_writer)
-                        # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
-                        # print("Saved model checkpoint to {}\n".format(path))
+                    if model_name == 'w2v' or model_name == 'w2vrt':
+                        curr_af1_dev = dev_step(x_dev, y_dev, writer=dev_summary_writer, score_type=score_type)
+                        curr_af1_tst = test_step(x_test, y_test, writer=test_summary_writer, score_type=score_type)
+
+                    else:
+                        curr_af1_dev = dev_step(x_dev, y_dev, x_lex_dev, writer=dev_summary_writer, score_type=score_type)
+                        curr_af1_tst = test_step(x_test, y_test, x_lex_test, writer=test_summary_writer,
+                                                 score_type = score_type)
+
+
+                    # if model_name == 'w2v':
+                    #     curr_af1_dev = dev_step(x_dev, y_dev, writer=dev_summary_writer)
+                    #     # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
+                    #     # print("Saved model checkpoint to {}\n".format(path))
+                    #
+                    #     curr_af1_tst = test_step(x_test, y_test, writer=test_summary_writer)
+                    #     # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
+                    #     # print("Saved model checkpoint to {}\n".format(path))
+                    #
+                    # elif model_name == 'w2vrt':
+                    #     curr_af1_dev = dev_step(x_dev, y_dev, writer=dev_summary_writer, score_type='acc')
+                    #     curr_af1_tst = test_step(x_test, y_test, writer=test_summary_writer, score_type='acc')
+                    #
+                    # elif model_name == 'w2vlexrt':
+                    #     curr_af1_dev = dev_step(x_dev, y_dev, x_lex_dev, writer=dev_summary_writer, score_type='acc')
+                    #     curr_af1_tst = test_step(x_test, y_test, x_lex_test, writer=test_summary_writer,
+                    #                              score_type='acc')
+                    # else:
+                    #     curr_af1_dev = dev_step(x_dev, y_dev, x_lex_dev, writer=dev_summary_writer)
+                    #     # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
+                    #     # print("Saved model checkpoint to {}\n".format(path))
+                    #
+                    #     curr_af1_tst = test_step(x_test, y_test, x_lex_test, writer=test_summary_writer)
+                    #     # path = saver.save(sess, checkpoint_prefix, global_step=current_step)
+                    #     # print("Saved model checkpoint to {}\n".format(path))
 
                     if curr_af1_dev > max_af1_dev:
                         max_af1_dev = curr_af1_dev
@@ -649,8 +663,14 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                         path = saver.save(sess, checkpoint_prefix, global_step=current_step)
                         print("Saved model checkpoint to {}\n".format(path))
 
-                    print 'Status: [%d] Max f1 for dev (%f), Max f1 for tst (%f)\n' % (
-                        index_at_max_af1_dev, max_af1_dev, af1_tst_at_max_af1_dev)
+                    if rt_data == True:
+                        print 'Status: [%d] Max Acc for dev (%f), Max Acc for tst (%f)\n' % (
+                            index_at_max_af1_dev, max_af1_dev*100, af1_tst_at_max_af1_dev*100)
+                    else:
+                        print 'Status: [%d] Max f1 for dev (%f), Max f1 for tst (%f)\n' % (
+                            index_at_max_af1_dev, max_af1_dev, af1_tst_at_max_af1_dev)
+
+
                     sys.stdout.flush()
 
                     # if current_step % FLAGS.test_every == 0:
