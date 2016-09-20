@@ -53,18 +53,6 @@ print("")
 # os.system('cls' if os.name == 'nt' else 'clear')
 
 
-def load_w2v2(w2vdim, simple_run=True, base_path='../data/emory_w2v/'):
-    if simple_run:
-        return {'a': np.array([np.float32(0.0)] * w2vdim)}
-
-    else:
-        model_path = base_path + 'w2v-%d.bin' % w2vdim
-        model = Word2Vec.load_word2vec_format(model_path, binary=True)
-        print("The vocabulary size is: " + str(len(model.vocab)))
-
-        return model
-
-
 def load_w2v(w2vdim, simple_run=True, source="twitter"):
     if simple_run:
         return {'a': np.array([np.float32(0.0)] * w2vdim)}
@@ -256,7 +244,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
         if w2vsource == "twitter":
             w2vmodel = load_w2v(w2vdim, simple_run=simple_run)
         else:
-            w2vmodel = load_w2v(w2vdim, simple_run=simple_run)
+            w2vmodel = load_w2v(w2vdim, simple_run=simple_run, source="amazon")
 
     unigram_lexicon_model = norm_model
     # unigram_lexicon_model = raw_model
