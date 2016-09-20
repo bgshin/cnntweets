@@ -1439,6 +1439,7 @@ class TextCNNAttention2VecIndividual(object):
 
         # Keeping track of l2 regularization loss (optional)
         l2_loss = tf.constant(0.0)
+        l1_loss = tf.constant(0.0)
 
         # Embedding layer
         with tf.device('/cpu:0'), tf.name_scope("embedding"):
@@ -1616,13 +1617,15 @@ class TextCNNAttention2VecIndividual(object):
             b = tf.Variable(tf.constant(0.1, shape=[num_classes]), name="b")
             l2_loss += tf.nn.l2_loss(W)/30
             l2_loss += tf.nn.l2_loss(b)/30
+            l1_loss += tf.reduce_sum(tf.abs(W))
+            l1_loss += tf.reduce_sum(tf.abs(b))
             self.scores = tf.nn.xw_plus_b(self.h_drop, W, b, name="scores")
             self.predictions = tf.argmax(self.scores, 1, name="predictions")
 
         # CalculateMean cross-entropy loss
         with tf.name_scope("loss"):
             losses = tf.nn.softmax_cross_entropy_with_logits(self.scores, self.input_y)
-            self.loss = tf.reduce_mean(losses) + l2_reg_lambda * l2_loss
+            self.loss = tf.reduce_mean(losses) + l2_reg_lambda * l2_loss + l2_reg_lambda*l2_loss
 
         # Accuracy
         with tf.name_scope("accuracy"):
