@@ -541,7 +541,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                 """
                 A single training step
                 """
-                if multichannel==False or x_batch_lex == None:
+                if multichannel is True or x_batch_lex is None:
                     feed_dict = {
                         cnn.input_x: x_batch,
                         cnn.input_y: y_batch,
@@ -570,7 +570,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                 """
                 Evaluates model on a dev set
                 """
-                if multichannel == False or x_batch_lex == None:
+                if multichannel is True or x_batch_lex is None:
                     feed_dict = {
                         cnn.input_x: x_batch,
                         cnn.input_y: y_batch,
@@ -604,7 +604,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                 """
                 Evaluates model on a test set
                 """
-                if multichannel == False or x_batch_lex == None:
+                if multichannel is True or x_batch_lex is None:
                     feed_dict = {
                         cnn.input_x: x_batch,
                         cnn.input_y: y_batch,
