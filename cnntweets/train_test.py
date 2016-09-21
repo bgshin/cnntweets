@@ -760,12 +760,12 @@ if __name__ == "__main__":
              args.model, args.expanded, args.attdepthw2v, args.attdepthlex, args.num_epochs,
              args.l2_reg_lambda, args.l1_reg_lambda)
 
-    # run_train(args.w2vsource, args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed,
-    #           args.model, args.expanded, args.attdepthw2v, args.attdepthlex, args.num_epochs,
-    #           args.l2_reg_lambda, args.l1_reg_lambda,
-    #           simple_run=False)
     run_train(args.w2vsource, args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed,
               args.model, args.expanded, args.attdepthw2v, args.attdepthlex, args.num_epochs,
               args.l2_reg_lambda, args.l1_reg_lambda,
-              simple_run=True)
+              simple_run=False)
+    # run_train(args.w2vsource, args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed,
+    #           args.model, args.expanded, args.attdepthw2v, args.attdepthlex, args.num_epochs,
+    #           args.l2_reg_lambda, args.l1_reg_lambda,
+    #           simple_run=True)
 
