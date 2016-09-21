@@ -662,9 +662,10 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                         curr_af1_tst = test_step(x_test, y_test, writer=test_summary_writer, score_type=score_type)
 
                     else:
-                        curr_af1_dev = dev_step(x_dev, y_dev, x_lex_dev, writer=dev_summary_writer, score_type=score_type)
+                        curr_af1_dev = dev_step(x_dev, y_dev, x_lex_dev, writer=dev_summary_writer,
+                                                score_type=score_type, multichannel=multichannel)
                         curr_af1_tst = test_step(x_test, y_test, x_lex_test, writer=test_summary_writer,
-                                                 score_type = score_type)
+                                                 score_type = score_type, multichannel=multichannel)
 
 
                     # if model_name == 'w2v':
