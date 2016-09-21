@@ -7,7 +7,7 @@ import numpy as np
 import datetime
 from utils import cnn_data_helpers
 from utils.butils import Timer
-from cnn_models.w2v_lex_cnn import W2V_LEX_CNN
+from cnn_models.w2v_lex_cnn import W2V_LEX_CNN, W2V_LEX_CNN_CONCAT
 from cnn_models.w2v_cnn import W2V_CNN
 from cnn_models.preattention_cnn import TextCNNPreAttention, TextCNNPreAttentionBias
 from cnn_models.preattention_cnn import TextAttention2Vec, TextAttention2VecIndividual
@@ -186,11 +186,15 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
     norm_model = []
 
     rt_list = ['w2vrt', 'w2vlexrt', 'attrt', 'attbrt', 'a2vrt', 'a2vindrt', 'a2vindbrt', 'a2vindw2vrt',
-               'a2vindlexrt', 'cnna2vindrt', 'cnna2vindw2vrt', 'cnna2vindlexrt', 'cnnmcrt']
+               'a2vindlexrt', 'cnna2vindrt', 'cnna2vindw2vrt', 'cnna2vindlexrt', 'cnnmcrt', 'w2vlexcrt']
 
     multichannel = False
     if model_name == 'cnnmc' or model_name == 'cnnmcrt':
         multichannel = True
+
+    rt_data = False
+    if model_name in rt_list:
+        rt_data = True
 
     with Timer("lex"):
         if is_expanded == 0:
@@ -255,9 +259,6 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
         #     w2vmodel = load_w2v(w2vdim, simple_run=simple_run, source="amazon")
 
 
-    rt_data = False
-    if model_name in rt_list:
-        rt_data = True
 
     unigram_lexicon_model = norm_model
     # unigram_lexicon_model = raw_model
@@ -472,6 +473,17 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                     l2_reg_lambda=l2_reg_lambda,
                     l1_reg_lambda=l1_reg_lambda)
 
+            elif model_name == 'w2vlexc' or model_name == 'w2vlexcrt':
+                cnn = W2V_LEX_CNN_CONCAT(
+                    sequence_length=x_train.shape[1],
+                    num_classes=num_classes,
+                    embedding_size=w2vdim,
+                    embedding_size_lex=lexdim,
+                    num_filters_lex=lexnumfilters,
+                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
+                    num_filters=w2vnumfilters,
+                    l2_reg_lambda=l2_reg_lambda,
+                    l1_reg_lambda=l1_reg_lambda)
 
             else: # default is w2vlex
                 cnn = W2V_LEX_CNN(
@@ -739,7 +751,8 @@ if __name__ == "__main__":
                                                              'cnna2vind', 'cnna2vindrt',
                                                              'cnna2vindw2v', 'cnna2vindw2vrt',
                                                              'cnna2vindlex', 'cnna2vindlexrt',
-                                                             'cnnmc','cnnmcrt'
+                                                             'cnnmc','cnnmcrt',
+                                                             'w2vlexc', 'w2vlexcrt'
                                                               ],
                         type=str)  # w2v, w2vlex, attention
     parser.add_argument('--expanded', default=0, choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 1234567], type=int)
