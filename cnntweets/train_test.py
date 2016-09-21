@@ -15,7 +15,7 @@ from cnn_models.preattention_cnn import TextAttention2VecIndividualBias
 from cnn_models.preattention_cnn import TextAttention2VecIndividualW2v, TextAttention2VecIndividualLex
 from cnn_models.preattention_cnn import TextCNNAttention2VecIndividual
 from cnn_models.preattention_cnn import TextCNNAttention2VecIndividualW2v, TextCNNAttention2VecIndividualLex
-
+from cnn_models.multi_channel import W2V_LEX_CNN_MC
 
 
 
@@ -32,14 +32,14 @@ import pickle
 # Model Hyperparameters
 tf.flags.DEFINE_string("filter_sizes", "2,3,4,5", "Comma-separated filter sizes (default: '3,4,5')")
 tf.flags.DEFINE_float("dropout_keep_prob", 0.8, "Dropout keep probability (default: 0.5)")
-tf.flags.DEFINE_float("l2_reg_lambda", 2.0, "L2 regularizaion lambda (default: 0.0)")
+# tf.flags.DEFINE_float("l2_reg_lambda", 2.0, "L2 regularizaion lambda (default: 0.0)")
 
 # Training parameters
 tf.flags.DEFINE_integer("batch_size", 64, "Batch Size (default: 64)")
 # tf.flags.DEFINE_integer("num_epochs", 30, "Number of training epochs (default: 200)")
 tf.flags.DEFINE_integer("evaluate_every", 100, "Evaluate model on dev set after this many steps (default: 100)")
-tf.flags.DEFINE_integer("test_every", 100000, "Evaluate model on test set after this many steps (default: 100)")
-tf.flags.DEFINE_integer("checkpoint_every", 10000, "Save model after this many steps (default: 100)")
+# tf.flags.DEFINE_integer("test_every", 100000, "Evaluate model on test set after this many steps (default: 100)")
+# tf.flags.DEFINE_integer("checkpoint_every", 10000, "Save model after this many steps (default: 100)")
 # Misc Parameters
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
 tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
@@ -186,7 +186,11 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
     norm_model = []
 
     rt_list = ['w2vrt', 'w2vlexrt', 'attrt', 'attbrt', 'a2vrt', 'a2vindrt', 'a2vindbrt', 'a2vindw2vrt',
-               'a2vindlexrt', 'cnna2vindrt', 'cnna2vindw2vrt', 'cnna2vindlexrt', ]
+               'a2vindlexrt', 'cnna2vindrt', 'cnna2vindw2vrt', 'cnna2vindlexrt', 'cnnmcrt']
+
+    multichannel = False
+    if model_name == 'cnnmc' or model_name == 'cnnmcrt':
+        multichannel = True
 
     with Timer("lex"):
         if is_expanded == 0:
@@ -260,15 +264,18 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
 
     if simple_run:
         x_train, y_train, x_lex_train = cnn_data_helpers.load_data('trn_sample', w2vmodel, unigram_lexicon_model,
-                                                                   max_len)
-        x_dev, y_dev, x_lex_dev = cnn_data_helpers.load_data('dev_sample', w2vmodel, unigram_lexicon_model, max_len)
-        x_test, y_test, x_lex_test = cnn_data_helpers.load_data('tst_sample', w2vmodel, unigram_lexicon_model, max_len)
+                                                                   max_len, multichannel=multichannel)
+        x_dev, y_dev, x_lex_dev = cnn_data_helpers.load_data('dev_sample', w2vmodel, unigram_lexicon_model, max_len,
+                                                             multichannel = multichannel)
+        x_test, y_test, x_lex_test = cnn_data_helpers.load_data('tst_sample', w2vmodel, unigram_lexicon_model, max_len,
+                                                                multichannel=multichannel)
     else:
         x_train, y_train, x_lex_train = cnn_data_helpers.load_data('trn', w2vmodel, unigram_lexicon_model, max_len,
-                                                                   rt_data)
-        x_dev, y_dev, x_lex_dev = cnn_data_helpers.load_data('dev', w2vmodel, unigram_lexicon_model, max_len, rt_data)
+                                                                   rt_data, multichannel=multichannel)
+        x_dev, y_dev, x_lex_dev = cnn_data_helpers.load_data('dev', w2vmodel, unigram_lexicon_model, max_len, rt_data,
+                                                             multichannel=multichannel)
         x_test, y_test, x_lex_test = cnn_data_helpers.load_data('tst', w2vmodel, unigram_lexicon_model, max_len,
-                                                                rt_data)
+                                                                rt_data, multichannel=multichannel)
 
     del (w2vmodel)
     del (norm_model)
@@ -454,6 +461,18 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                     l2_reg_lambda=l2_reg_lambda,
                     l1_reg_lambda=l1_reg_lambda)
 
+
+            elif model_name =='cnnmc' or model_name =='cnnmcrt':
+                cnn = W2V_LEX_CNN_MC(
+                    sequence_length=x_train.shape[1],
+                    num_classes=num_classes,
+                    embedding_size=w2vdim,
+                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
+                    num_filters=w2vnumfilters,
+                    l2_reg_lambda=l2_reg_lambda,
+                    l1_reg_lambda=l1_reg_lambda)
+
+
             else: # default is w2vlex
                 cnn = W2V_LEX_CNN(
                     sequence_length=x_train.shape[1],
@@ -518,11 +537,17 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
             # Initialize all variables
             sess.run(tf.initialize_all_variables())
 
-            def train_step(x_batch, y_batch, x_batch_lex=None):
+            def train_step(x_batch, y_batch, x_batch_lex=None, multichannel=False):
                 """
                 A single training step
                 """
-                if x_batch_lex != None:
+                if multichannel==False or x_batch_lex == None:
+                    feed_dict = {
+                        cnn.input_x: x_batch,
+                        cnn.input_y: y_batch,
+                        cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
+                    }
+                else:
                     feed_dict = {
                         cnn.input_x: x_batch,
                         cnn.input_y: y_batch,
@@ -530,12 +555,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                         cnn.input_x_lexicon: x_batch_lex,
                         cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
                     }
-                else:
-                    feed_dict = {
-                        cnn.input_x: x_batch,
-                        cnn.input_y: y_batch,
-                        cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
-                    }
+
                 _, step, summaries, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1 = sess.run(
                     [train_op, global_step, train_summary_op, cnn.loss, cnn.accuracy,
                      cnn.neg_r, cnn.neg_p, cnn.f1_neg, cnn.f1_pos, cnn.avg_f1],
@@ -546,11 +566,17 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                 #      format(time_str, step, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1))
                 train_summary_writer.add_summary(summaries, step)
 
-            def dev_step(x_batch, y_batch, x_batch_lex=None, writer=None, score_type='f1'):
+            def dev_step(x_batch, y_batch, x_batch_lex=None, writer=None, score_type='f1', multichannel=False):
                 """
                 Evaluates model on a dev set
                 """
-                if x_batch_lex != None:
+                if multichannel == False or x_batch_lex == None:
+                    feed_dict = {
+                        cnn.input_x: x_batch,
+                        cnn.input_y: y_batch,
+                        cnn.dropout_keep_prob: 1.0
+                    }
+                else:
                     feed_dict = {
                         cnn.input_x: x_batch,
                         cnn.input_y: y_batch,
@@ -558,12 +584,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                         cnn.input_x_lexicon: x_batch_lex,
                         cnn.dropout_keep_prob: 1.0
                     }
-                else:
-                    feed_dict = {
-                        cnn.input_x: x_batch,
-                        cnn.input_y: y_batch,
-                        cnn.dropout_keep_prob: 1.0
-                    }
+
                 step, summaries, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1 = sess.run(
                     [global_step, dev_summary_op, cnn.loss, cnn.accuracy,
                      cnn.neg_r, cnn.neg_p, cnn.f1_neg, cnn.f1_pos, cnn.avg_f1],
@@ -579,11 +600,17 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                 else:
                     return accuracy
 
-            def test_step(x_batch, y_batch, x_batch_lex=None, writer=None, score_type='f1'):
+            def test_step(x_batch, y_batch, x_batch_lex=None, writer=None, score_type='f1', multichannel=False):
                 """
                 Evaluates model on a test set
                 """
-                if x_batch_lex != None:
+                if multichannel == False or x_batch_lex == None:
+                    feed_dict = {
+                        cnn.input_x: x_batch,
+                        cnn.input_y: y_batch,
+                        cnn.dropout_keep_prob: 1.0
+                    }
+                else:
                     feed_dict = {
                         cnn.input_x: x_batch,
                         cnn.input_y: y_batch,
@@ -591,12 +618,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                         cnn.input_x_lexicon: x_batch_lex,
                         cnn.dropout_keep_prob: 1.0
                     }
-                else:
-                    feed_dict = {
-                        cnn.input_x: x_batch,
-                        cnn.input_y: y_batch,
-                        cnn.dropout_keep_prob: 1.0
-                    }
+
                 step, summaries, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1 = sess.run(
                     [global_step, dev_summary_op, cnn.loss, cnn.accuracy,
                      cnn.neg_r, cnn.neg_p, cnn.f1_neg, cnn.f1_pos, cnn.avg_f1],
@@ -621,8 +643,11 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
 
                 if model_name == 'w2v' or model_name == 'w2vrt':
                     train_step(x_batch, y_batch)
+
                 else:
-                    train_step(x_batch, y_batch, x_batch_lex)
+                    train_step(x_batch, y_batch, x_batch_lex, multichannel=multichannel)
+                    # train_step(x_batch, y_batch, x_batch_lex)
+
 
                 current_step = tf.train.global_step(sess, global_step)
                 if current_step % FLAGS.evaluate_every == 0:
@@ -706,7 +731,7 @@ if __name__ == "__main__":
     parser.add_argument('--lexdim', default=15, type=int)
     parser.add_argument('--lexnumfilters', default=9, type=int)
     parser.add_argument('--randomseed', default=1, type=int)
-    parser.add_argument('--model', default='a2vind', choices=['w2v', 'w2vrt', 'w2vlex', 'w2vlexrt',
+    parser.add_argument('--model', default='cnnmc', choices=['w2v', 'w2vrt', 'w2vlex', 'w2vlexrt',
                                                             'att', 'attrt', 'attb', 'attbrt', 'a2v', 'a2vrt',
                                                               'a2vind', 'a2vindrt', 'a2vindb', 'a2vindbrt',
                                                               'a2vindw2v', 'a2vindw2vrt', 'a2vindlex', 'a2vindlexrt',
@@ -715,12 +740,12 @@ if __name__ == "__main__":
                                                               'cnna2vindlex', 'cnna2vindlexrt',
                                                               ],
                         type=str)  # w2v, w2vlex, attention
-    parser.add_argument('--expanded', default=8, choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 1234567], type=int)
+    parser.add_argument('--expanded', default=0, choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 1234567], type=int)
     parser.add_argument('--attdepthw2v', default=50, type=int)
     parser.add_argument('--attdepthlex', default=20, type=int)
     parser.add_argument('--num_epochs', default=30, type=int)
     parser.add_argument('--l2_reg_lambda', default=2.0, type=float)
-    parser.add_argument('--l1_reg_lambda', default=2.0, type=float)
+    parser.add_argument('--l1_reg_lambda', default=0.0, type=float)
 
 
 
@@ -734,11 +759,12 @@ if __name__ == "__main__":
              args.model, args.expanded, args.attdepthw2v, args.attdepthlex, args.num_epochs,
              args.l2_reg_lambda, args.l1_reg_lambda)
 
+    # run_train(args.w2vsource, args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed,
+    #           args.model, args.expanded, args.attdepthw2v, args.attdepthlex, args.num_epochs,
+    #           args.l2_reg_lambda, args.l1_reg_lambda,
+    #           simple_run=False)
     run_train(args.w2vsource, args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed,
               args.model, args.expanded, args.attdepthw2v, args.attdepthlex, args.num_epochs,
               args.l2_reg_lambda, args.l1_reg_lambda,
-              simple_run=False)
-    # run_train(args.w2vsource, args.w2vdim, args.w2vnumfilters, args.lexdim, args.lexnumfilters, args.randomseed,
-    #           args.model, simple_run=True)
-
+              simple_run=True)
 

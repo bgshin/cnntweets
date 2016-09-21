@@ -229,7 +229,7 @@ def build_input_data_with_w2v(sentences, labels, w2vmodel, lexiconModel):
     y = np.array(labels)
     return [x, y, x_lex]
 
-def load_data(dataset, w2vmodel, lexiconModel, padlen=None, rottenTomato=False):
+def load_data(dataset, w2vmodel, lexiconModel, padlen=None, rottenTomato=False, multichannel=False):
 # def load_data(dataset, w2vmodel, padlen=None):
     """
     Loads and preprocessed data for the MR dataset.
@@ -244,6 +244,20 @@ def load_data(dataset, w2vmodel, lexiconModel, padlen=None, rottenTomato=False):
         sentences_padded = pad_sentences(sentences, padlen)
 
     x, y , x_lex = build_input_data_with_w2v(sentences_padded, labels, w2vmodel, lexiconModel)
+
+
+    if multichannel==True:
+        w2vdim = x[0].shape[1]
+        lexdim = x_lex[0].shape[1]
+        npad = ((0, 0), (0, w2vdim - lexdim))
+
+        new_x_batch = []
+        for idx, xlex in enumerate(x_lex):
+            xlex_padded = np.pad(xlex, pad_width=npad, mode='constant', constant_values=0)
+            new_x_batch.append(np.concatenate((x[idx][..., np.newaxis], xlex_padded[..., np.newaxis]), axis=2))
+
+        x = np.array(new_x_batch)
+
     return [x, y, x_lex]
 
     # x, y = build_input_data_with_w2v(sentences_padded, labels, w2vmodel)
