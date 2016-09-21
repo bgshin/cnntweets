@@ -732,12 +732,13 @@ if __name__ == "__main__":
     parser.add_argument('--lexnumfilters', default=9, type=int)
     parser.add_argument('--randomseed', default=1, type=int)
     parser.add_argument('--model', default='cnnmc', choices=['w2v', 'w2vrt', 'w2vlex', 'w2vlexrt',
-                                                            'att', 'attrt', 'attb', 'attbrt', 'a2v', 'a2vrt',
-                                                              'a2vind', 'a2vindrt', 'a2vindb', 'a2vindbrt',
-                                                              'a2vindw2v', 'a2vindw2vrt', 'a2vindlex', 'a2vindlexrt',
-                                                              'cnna2vind', 'cnna2vindrt',
-                                                              'cnna2vindw2v', 'cnna2vindw2vrt',
-                                                              'cnna2vindlex', 'cnna2vindlexrt',
+                                                             'att', 'attrt', 'attb', 'attbrt', 'a2v', 'a2vrt',
+                                                             'a2vind', 'a2vindrt', 'a2vindb', 'a2vindbrt',
+                                                             'a2vindw2v', 'a2vindw2vrt', 'a2vindlex', 'a2vindlexrt',
+                                                             'cnna2vind', 'cnna2vindrt',
+                                                             'cnna2vindw2v', 'cnna2vindw2vrt',
+                                                             'cnna2vindlex', 'cnna2vindlexrt',
+                                                             'cnnmc','cnnmcrt'
                                                               ],
                         type=str)  # w2v, w2vlex, attention
     parser.add_argument('--expanded', default=0, choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 1234567], type=int)
