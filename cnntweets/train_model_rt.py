@@ -840,9 +840,9 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--w2vsource', default='twitter', choices=['twitter', 'amazon'], type=str)
-    parser.add_argument('--w2vdim', default=400, type=int)
-    parser.add_argument('--w2vnumfilters', default=64, type=int)
+    parser.add_argument('--w2vsource', default='amazon', choices=['twitter', 'amazon'], type=str)
+    parser.add_argument('--w2vdim', default=200, type=int)
+    parser.add_argument('--w2vnumfilters', default=16, type=int)
     parser.add_argument('--lexdim', default=15, type=int)
     parser.add_argument('--lexnumfilters', default=9, type=int)
     parser.add_argument('--randomseed', default=1, type=int)
