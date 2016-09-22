@@ -316,7 +316,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
     # Training
     # ==================================================
     if randomseed > 0:
-        tf.set_random_seed(randomseed)
+        tf.set_random_seed(randomseed+10)
     with tf.Graph().as_default():
         max_af1_dev = 0
         index_at_max_af1_dev = 0
@@ -328,7 +328,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
         sess = tf.Session(config=session_conf)
         with sess.as_default():
             if randomseed > 0:
-                tf.set_random_seed(randomseed+1)
+                tf.set_random_seed(randomseed)
 
             num_classes = 3
             if model_name in rt_list:
@@ -607,16 +607,23 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                 A single training step
                 """
                 if x_batch_fat is not None:
-                    feed_dict = {
-                        cnn.input_x_2c: x_batch_fat,
-                        cnn.input_x: x_batch,
-                        cnn.input_y: y_batch,
-                        cnn.input_x_lexicon: x_batch_lex,
-                        cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
-                    }
+                    if x_batch_lex is None:
+                        feed_dict = {
+                            cnn.input_x: x_batch_fat,
+                            cnn.input_y: y_batch,
+                            cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
+                        }
+                    else:
+                        feed_dict = {
+                            cnn.input_x_2c: x_batch_fat,
+                            cnn.input_x: x_batch,
+                            cnn.input_y: y_batch,
+                            cnn.input_x_lexicon: x_batch_lex,
+                            cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
+                        }
 
                 else:
-                    if multichannel is True or x_batch_lex is None:
+                    if x_batch_lex is None:
                         feed_dict = {
                             cnn.input_x: x_batch,
                             cnn.input_y: y_batch,
@@ -646,16 +653,23 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                 Evaluates model on a dev set
                 """
                 if x_batch_fat is not None:
-                    feed_dict = {
-                        cnn.input_x_2c: x_batch_fat,
-                        cnn.input_x: x_batch,
-                        cnn.input_y: y_batch,
-                        cnn.input_x_lexicon: x_batch_lex,
-                        cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
-                    }
+                    if x_batch_lex is None:
+                        feed_dict = {
+                            cnn.input_x: x_batch_fat,
+                            cnn.input_y: y_batch,
+                            cnn.dropout_keep_prob: 1.0
+                        }
+                    else:
+                        feed_dict = {
+                            cnn.input_x_2c: x_batch_fat,
+                            cnn.input_x: x_batch,
+                            cnn.input_y: y_batch,
+                            cnn.input_x_lexicon: x_batch_lex,
+                            cnn.dropout_keep_prob: 1.0
+                        }
 
                 else:
-                    if multichannel is True or x_batch_lex is None:
+                    if x_batch_lex is None:
                         feed_dict = {
                             cnn.input_x: x_batch,
                             cnn.input_y: y_batch,
@@ -690,16 +704,23 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                 Evaluates model on a test set
                 """
                 if x_batch_fat is not None:
-                    feed_dict = {
-                        cnn.input_x_2c: x_batch_fat,
-                        cnn.input_x: x_batch,
-                        cnn.input_y: y_batch,
-                        cnn.input_x_lexicon: x_batch_lex,
-                        cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
-                    }
+                    if x_batch_lex is None:
+                        feed_dict = {
+                            cnn.input_x: x_batch_fat,
+                            cnn.input_y: y_batch,
+                            cnn.dropout_keep_prob: 1.0
+                        }
+                    else:
+                        feed_dict = {
+                            cnn.input_x_2c: x_batch_fat,
+                            cnn.input_x: x_batch,
+                            cnn.input_y: y_batch,
+                            cnn.input_x_lexicon: x_batch_lex,
+                            cnn.dropout_keep_prob: 1.0
+                        }
 
                 else:
-                    if multichannel is True or x_batch_lex is None:
+                    if x_batch_lex is None:
                         feed_dict = {
                             cnn.input_x: x_batch,
                             cnn.input_y: y_batch,
