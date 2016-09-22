@@ -611,6 +611,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                         cnn.input_x_2c: x_batch_fat,
                         cnn.input_x: x_batch,
                         cnn.input_y: y_batch,
+                        cnn.input_x_lexicon: x_batch_lex,
                         cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
                     }
 
@@ -649,6 +650,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                         cnn.input_x_2c: x_batch_fat,
                         cnn.input_x: x_batch,
                         cnn.input_y: y_batch,
+                        cnn.input_x_lexicon: x_batch_lex,
                         cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
                     }
 
@@ -692,6 +694,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                         cnn.input_x_2c: x_batch_fat,
                         cnn.input_x: x_batch,
                         cnn.input_y: y_batch,
+                        cnn.input_x_lexicon: x_batch_lex,
                         cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
                     }
 
