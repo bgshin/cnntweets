@@ -883,7 +883,7 @@ if __name__ == "__main__":
     parser.add_argument('--expanded', default=0, choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 1234567], type=int)
     parser.add_argument('--attdepthw2v', default=50, type=int)
     parser.add_argument('--attdepthlex', default=20, type=int)
-    parser.add_argument('--num_epochs', default=21, type=int)
+    parser.add_argument('--num_epochs', default=25, type=int)
     parser.add_argument('--l2_reg_lambda', default=2.0, type=float)
     parser.add_argument('--l1_reg_lambda', default=0.0, type=float)
 
