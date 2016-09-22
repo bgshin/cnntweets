@@ -527,16 +527,16 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
 
             elif model_name == 'cnnmca2v' or model_name == 'cnnmca2vrt':
                 cnn = W2V_LEX_CNN_MC_A2V(
-                    sequence_length=60,
-                    num_classes=3,
-                    embedding_size=400,
-                    embedding_size_lex=15,
-                    filter_sizes=[2],
-                    num_filters=16,
+                    sequence_length=x_train.shape[1],
+                    num_classes=num_classes,
+                    embedding_size=w2vdim,
+                    embedding_size_lex=lexdim,
+                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
+                    num_filters=w2vnumfilters,
                     attention_depth_w2v=50,
                     attention_depth_lex=20,
-                    l2_reg_lambda=2.0
-                )
+                    l2_reg_lambda=l2_reg_lambda,
+                    l1_reg_lambda=l1_reg_lambda)
 
             else: # default is w2vlex
                 cnn = W2V_LEX_CNN(
