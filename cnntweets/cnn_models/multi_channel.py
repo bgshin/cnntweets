@@ -159,11 +159,21 @@ class W2V_LEX_CNN_MC_A2V(object):
 
         # Embedding layer
         with tf.device('/cpu:0'), tf.name_scope("embedding"):
-            self.embedded_chars_expanded = tf.expand_dims(self.input_x, -1)
-            print '[self.embedded_chars_expanded]', self.embedded_chars_expanded
+            self.embedded_chars = self.input_x
+            self.embedded_chars_expanded = tf.expand_dims(self.embedded_chars, -1)
+            print self.embedded_chars_expanded
 
             # lexicon embedding
-            self.embedded_chars_lexicon = tf.expand_dims(self.input_x_lexicon, -1)
+            self.embedded_chars_lexicon = self.input_x_lexicon
+            self.embedded_chars_expanded_lexicon = tf.expand_dims(self.embedded_chars_lexicon, -1)
+
+            print '[self.embedded_chars]', self.embedded_chars
+            print '[self.embedded_chars_expanded]', self.embedded_chars_expanded
+
+            print '[self.embedded_chars_lexicon]', self.embedded_chars_lexicon
+            print '[self.embedded_chars_expanded_lexicon]', self.embedded_chars_expanded_lexicon
+
+
 
         attention_outputs = []
         with tf.name_scope("pre-attention"):
