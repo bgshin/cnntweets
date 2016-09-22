@@ -256,9 +256,10 @@ def load_data(dataset, w2vmodel, lexiconModel, padlen=None, rottenTomato=False, 
             xlex_padded = np.pad(xlex, pad_width=npad, mode='constant', constant_values=0)
             new_x_batch.append(np.concatenate((x[idx][..., np.newaxis], xlex_padded[..., np.newaxis]), axis=2))
 
-        x = np.array(new_x_batch)
+        x_fat = np.array(new_x_batch)
+        return [x, y, x_lex, x_fat]
 
-    return [x, y, x_lex]
+    return [x, y, x_lex, None]
 
     # x, y = build_input_data_with_w2v(sentences_padded, labels, w2vmodel)
     # return [x, y]

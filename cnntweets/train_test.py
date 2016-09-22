@@ -7,7 +7,7 @@ import numpy as np
 import datetime
 from utils import cnn_data_helpers
 from utils.butils import Timer
-from cnn_models.w2v_lex_cnn import W2V_LEX_CNN, W2V_LEX_CNN_CONCAT
+from cnn_models.w2v_lex_cnn import W2V_LEX_CNN, W2V_LEX_CNN_CONCAT, W2V_LEX_CNN_CONCAT_A2V
 from cnn_models.w2v_cnn import W2V_CNN
 from cnn_models.preattention_cnn import TextCNNPreAttention, TextCNNPreAttentionBias
 from cnn_models.preattention_cnn import TextAttention2Vec, TextAttention2VecIndividual
@@ -15,7 +15,7 @@ from cnn_models.preattention_cnn import TextAttention2VecIndividualBias
 from cnn_models.preattention_cnn import TextAttention2VecIndividualW2v, TextAttention2VecIndividualLex
 from cnn_models.preattention_cnn import TextCNNAttention2VecIndividual
 from cnn_models.preattention_cnn import TextCNNAttention2VecIndividualW2v, TextCNNAttention2VecIndividualLex
-from cnn_models.multi_channel import W2V_LEX_CNN_MC
+from cnn_models.multi_channel import W2V_LEX_CNN_MC, W2V_LEX_CNN_MC_A2V
 
 
 
@@ -186,11 +186,16 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
     norm_model = []
 
     rt_list = ['w2vrt', 'w2vlexrt', 'attrt', 'attbrt', 'a2vrt', 'a2vindrt', 'a2vindbrt', 'a2vindw2vrt',
-               'a2vindlexrt', 'cnna2vindrt', 'cnna2vindw2vrt', 'cnna2vindlexrt', 'cnnmcrt', 'w2vlexcrt']
+               'a2vindlexrt', 'cnna2vindrt', 'cnna2vindw2vrt', 'cnna2vindlexrt', 'cnnmcrt', 'w2vlexcrt',
+               'w2vlexca2vrt', 'cnnmca2vrt']
 
     multichannel = False
-    if model_name == 'cnnmc' or model_name == 'cnnmcrt':
+    if model_name == 'cnnmc' or model_name == 'cnnmcrt' or model_name == 'cnnmca2v' or model_name == 'cnnmca2vrt':
         multichannel = True
+
+    multichannel_a2v = False
+    if model_name == 'cnnmca2v' or model_name == 'cnnmca2vrt':
+        multichannel_a2v = True
 
     rt_data = False
     if model_name in rt_list:
@@ -264,19 +269,42 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
     # unigram_lexicon_model = raw_model
 
     if simple_run:
-        x_train, y_train, x_lex_train = cnn_data_helpers.load_data('trn_sample', w2vmodel, unigram_lexicon_model,
-                                                                   max_len, multichannel=multichannel)
-        x_dev, y_dev, x_lex_dev = cnn_data_helpers.load_data('dev_sample', w2vmodel, unigram_lexicon_model, max_len,
-                                                             multichannel = multichannel)
-        x_test, y_test, x_lex_test = cnn_data_helpers.load_data('tst_sample', w2vmodel, unigram_lexicon_model, max_len,
-                                                                multichannel=multichannel)
+        if multichannel_a2v is True:
+            x_train, y_train, x_lex_train, x_fat_train = \
+                cnn_data_helpers.load_data('trn_sample', w2vmodel, unigram_lexicon_model,
+                                                                       max_len, multichannel=multichannel)
+            x_dev, y_dev, x_lex_dev, x_fat_dev = \
+                cnn_data_helpers.load_data('dev_sample', w2vmodel, unigram_lexicon_model, max_len,
+                                                                 multichannel=multichannel)
+            x_test, y_test, x_lex_test, x_fat_test = \
+                cnn_data_helpers.load_data('tst_sample', w2vmodel, unigram_lexicon_model, max_len,
+                                                                    multichannel=multichannel)
+        else:
+            x_train, y_train, x_lex_train, _ = cnn_data_helpers.load_data('trn_sample', w2vmodel, unigram_lexicon_model,
+                                                                       max_len, multichannel=multichannel)
+            x_dev, y_dev, x_lex_dev, _ = cnn_data_helpers.load_data('dev_sample', w2vmodel, unigram_lexicon_model, max_len,
+                                                                 multichannel = multichannel)
+            x_test, y_test, x_lex_test, _ = cnn_data_helpers.load_data('tst_sample', w2vmodel, unigram_lexicon_model, max_len,
+                                                                    multichannel=multichannel)
+
     else:
-        x_train, y_train, x_lex_train = cnn_data_helpers.load_data('trn', w2vmodel, unigram_lexicon_model, max_len,
-                                                                   rt_data, multichannel=multichannel)
-        x_dev, y_dev, x_lex_dev = cnn_data_helpers.load_data('dev', w2vmodel, unigram_lexicon_model, max_len, rt_data,
-                                                             multichannel=multichannel)
-        x_test, y_test, x_lex_test = cnn_data_helpers.load_data('tst', w2vmodel, unigram_lexicon_model, max_len,
-                                                                rt_data, multichannel=multichannel)
+        if multichannel_a2v is True:
+            x_train, y_train, x_lex_train, x_fat_train = \
+                cnn_data_helpers.load_data('trn', w2vmodel, unigram_lexicon_model, max_len,
+                                           rottenTomato=rt_data, multichannel=multichannel)
+            x_dev, y_dev, x_lex_dev, x_fat_dev = \
+                cnn_data_helpers.load_data('dev', w2vmodel, unigram_lexicon_model, max_len,
+                                           rottenTomato=rt_data, multichannel=multichannel)
+            x_test, y_test, x_lex_test, x_fat_test = \
+                cnn_data_helpers.load_data('tst', w2vmodel, unigram_lexicon_model, max_len,
+                                           rottenTomato=rt_data, multichannel=multichannel)
+        else:
+            x_train, y_train, x_lex_train, _ = cnn_data_helpers.load_data('trn', w2vmodel, unigram_lexicon_model, max_len,
+                                                                       rottenTomato=rt_data, multichannel=multichannel)
+            x_dev, y_dev, x_lex_dev, _ = cnn_data_helpers.load_data('dev', w2vmodel, unigram_lexicon_model, max_len,
+                                                                 rottenTomato=rt_data, multichannel=multichannel)
+            x_test, y_test, x_lex_test, _ = cnn_data_helpers.load_data('tst', w2vmodel, unigram_lexicon_model, max_len,
+                                                                    rottenTomato=rt_data, multichannel=multichannel)
 
     del (w2vmodel)
     del (norm_model)
@@ -300,7 +328,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
         sess = tf.Session(config=session_conf)
         with sess.as_default():
             if randomseed > 0:
-                tf.set_random_seed(randomseed)
+                tf.set_random_seed(randomseed+1)
 
             num_classes = 3
             if model_name in rt_list:
@@ -479,11 +507,36 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                     num_classes=num_classes,
                     embedding_size=w2vdim,
                     embedding_size_lex=lexdim,
-                    num_filters_lex=lexnumfilters,
                     filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
                     num_filters=w2vnumfilters,
                     l2_reg_lambda=l2_reg_lambda,
                     l1_reg_lambda=l1_reg_lambda)
+
+            elif model_name == 'w2vlexca2v' or model_name == 'w2vlexca2vrt':
+                cnn = W2V_LEX_CNN_CONCAT_A2V(
+                    sequence_length=x_train.shape[1],
+                    num_classes=num_classes,
+                    embedding_size=w2vdim,
+                    embedding_size_lex=lexdim,
+                    filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
+                    num_filters=w2vnumfilters,
+                    attention_depth_w2v=attention_depth_w2v,
+                    attention_depth_lex=attention_depth_lex,
+                    l2_reg_lambda=l2_reg_lambda,
+                    l1_reg_lambda=l1_reg_lambda)
+
+            elif model_name == 'cnnmca2v' or model_name == 'cnnmca2vrt':
+                cnn = W2V_LEX_CNN_MC_A2V(
+                    sequence_length=60,
+                    num_classes=3,
+                    embedding_size=400,
+                    embedding_size_lex=15,
+                    filter_sizes=[2],
+                    num_filters=16,
+                    attention_depth_w2v=50,
+                    attention_depth_lex=20,
+                    l2_reg_lambda=2.0
+                )
 
             else: # default is w2vlex
                 cnn = W2V_LEX_CNN(
@@ -549,24 +602,33 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
             # Initialize all variables
             sess.run(tf.initialize_all_variables())
 
-            def train_step(x_batch, y_batch, x_batch_lex=None, multichannel=False):
+            def train_step(x_batch, y_batch, x_batch_lex=None, x_batch_fat=None, multichannel=False):
                 """
                 A single training step
                 """
-                if multichannel is True or x_batch_lex is None:
+                if x_batch_fat is not None:
                     feed_dict = {
+                        cnn.input_x_2c: x_batch_fat,
                         cnn.input_x: x_batch,
                         cnn.input_y: y_batch,
                         cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
                     }
+
                 else:
-                    feed_dict = {
-                        cnn.input_x: x_batch,
-                        cnn.input_y: y_batch,
-                        # lexicon
-                        cnn.input_x_lexicon: x_batch_lex,
-                        cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
-                    }
+                    if multichannel is True or x_batch_lex is None:
+                        feed_dict = {
+                            cnn.input_x: x_batch,
+                            cnn.input_y: y_batch,
+                            cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
+                        }
+                    else:
+                        feed_dict = {
+                            cnn.input_x: x_batch,
+                            cnn.input_y: y_batch,
+                            # lexicon
+                            cnn.input_x_lexicon: x_batch_lex,
+                            cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
+                        }
 
                 _, step, summaries, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1 = sess.run(
                     [train_op, global_step, train_summary_op, cnn.loss, cnn.accuracy,
@@ -578,24 +640,33 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                 #      format(time_str, step, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1))
                 train_summary_writer.add_summary(summaries, step)
 
-            def dev_step(x_batch, y_batch, x_batch_lex=None, writer=None, score_type='f1', multichannel=False):
+            def dev_step(x_batch, y_batch, x_batch_lex=None, x_batch_fat=None, writer=None, score_type='f1', multichannel=False):
                 """
                 Evaluates model on a dev set
                 """
-                if multichannel is True or x_batch_lex is None:
+                if x_batch_fat is not None:
                     feed_dict = {
+                        cnn.input_x_2c: x_batch_fat,
                         cnn.input_x: x_batch,
                         cnn.input_y: y_batch,
-                        cnn.dropout_keep_prob: 1.0
+                        cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
                     }
+
                 else:
-                    feed_dict = {
-                        cnn.input_x: x_batch,
-                        cnn.input_y: y_batch,
-                        # lexicon
-                        cnn.input_x_lexicon: x_batch_lex,
-                        cnn.dropout_keep_prob: 1.0
-                    }
+                    if multichannel is True or x_batch_lex is None:
+                        feed_dict = {
+                            cnn.input_x: x_batch,
+                            cnn.input_y: y_batch,
+                            cnn.dropout_keep_prob: 1.0
+                        }
+                    else:
+                        feed_dict = {
+                            cnn.input_x: x_batch,
+                            cnn.input_y: y_batch,
+                            # lexicon
+                            cnn.input_x_lexicon: x_batch_lex,
+                            cnn.dropout_keep_prob: 1.0
+                        }
 
                 step, summaries, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1 = sess.run(
                     [global_step, dev_summary_op, cnn.loss, cnn.accuracy,
@@ -612,24 +683,33 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                 else:
                     return accuracy
 
-            def test_step(x_batch, y_batch, x_batch_lex=None, writer=None, score_type='f1', multichannel=False):
+            def test_step(x_batch, y_batch, x_batch_lex=None, x_batch_fat=None, writer=None, score_type='f1', multichannel=False):
                 """
                 Evaluates model on a test set
                 """
-                if multichannel is True or x_batch_lex is None:
+                if x_batch_fat is not None:
                     feed_dict = {
+                        cnn.input_x_2c: x_batch_fat,
                         cnn.input_x: x_batch,
                         cnn.input_y: y_batch,
-                        cnn.dropout_keep_prob: 1.0
+                        cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
                     }
+
                 else:
-                    feed_dict = {
-                        cnn.input_x: x_batch,
-                        cnn.input_y: y_batch,
-                        # lexicon
-                        cnn.input_x_lexicon: x_batch_lex,
-                        cnn.dropout_keep_prob: 1.0
-                    }
+                    if multichannel is True or x_batch_lex is None:
+                        feed_dict = {
+                            cnn.input_x: x_batch,
+                            cnn.input_y: y_batch,
+                            cnn.dropout_keep_prob: 1.0
+                        }
+                    else:
+                        feed_dict = {
+                            cnn.input_x: x_batch,
+                            cnn.input_y: y_batch,
+                            # lexicon
+                            cnn.input_x_lexicon: x_batch_lex,
+                            cnn.dropout_keep_prob: 1.0
+                        }
 
                 step, summaries, loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1 = sess.run(
                     [global_step, dev_summary_op, cnn.loss, cnn.accuracy,
@@ -647,17 +727,29 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                     return accuracy
 
             # Generate batches
-            batches = cnn_data_helpers.batch_iter(
-                list(zip(x_train, y_train, x_lex_train)), FLAGS.batch_size, num_epochs)
+            if multichannel_a2v is True:
+                batches = cnn_data_helpers.batch_iter(
+                    list(zip(x_train, y_train, x_lex_train, x_fat_train)), FLAGS.batch_size, num_epochs)
+            else:
+                batches = cnn_data_helpers.batch_iter(
+                    list(zip(x_train, y_train, x_lex_train)), FLAGS.batch_size, num_epochs)
+
+
             # Training loop. For each batch...
             for batch in batches:
-                x_batch, y_batch, x_batch_lex = zip(*batch)
+                if multichannel_a2v is True:
+                    x_batch, y_batch, x_batch_lex, x_batch_fat = zip(*batch)
+                else:
+                    x_batch, y_batch, x_batch_lex = zip(*batch)
 
                 if model_name == 'w2v' or model_name == 'w2vrt':
                     train_step(x_batch, y_batch)
 
                 else:
-                    train_step(x_batch, y_batch, x_batch_lex, multichannel=multichannel)
+                    if multichannel_a2v is True:
+                        train_step(x_batch, y_batch, x_batch_lex, x_batch_fat)
+                    else:
+                        train_step(x_batch, y_batch, x_batch_lex, multichannel=multichannel)
                     # train_step(x_batch, y_batch, x_batch_lex)
 
 
@@ -674,10 +766,17 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                         curr_af1_tst = test_step(x_test, y_test, writer=test_summary_writer, score_type=score_type)
 
                     else:
-                        curr_af1_dev = dev_step(x_dev, y_dev, x_lex_dev, writer=dev_summary_writer,
-                                                score_type=score_type, multichannel=multichannel)
-                        curr_af1_tst = test_step(x_test, y_test, x_lex_test, writer=test_summary_writer,
-                                                 score_type = score_type, multichannel=multichannel)
+                        if multichannel_a2v is True:
+                            curr_af1_dev = dev_step(x_dev, y_dev, x_lex_dev, x_fat_dev, writer=dev_summary_writer,
+                                                    score_type=score_type, multichannel=multichannel)
+                            curr_af1_tst = test_step(x_test, y_test, x_lex_test, x_fat_test, writer=test_summary_writer,
+                                                     score_type=score_type, multichannel=multichannel)
+
+                        else:
+                            curr_af1_dev = dev_step(x_dev, y_dev, x_lex_dev, writer=dev_summary_writer,
+                                                    score_type=score_type, multichannel=multichannel)
+                            curr_af1_tst = test_step(x_test, y_test, x_lex_test, writer=test_summary_writer,
+                                                     score_type = score_type, multichannel=multichannel)
 
 
                     # if model_name == 'w2v':
@@ -752,7 +851,9 @@ if __name__ == "__main__":
                                                              'cnna2vindw2v', 'cnna2vindw2vrt',
                                                              'cnna2vindlex', 'cnna2vindlexrt',
                                                              'cnnmc','cnnmcrt',
-                                                             'w2vlexc', 'w2vlexcrt'
+                                                             'w2vlexc', 'w2vlexcrt',
+                                                             'w2vlexca2v', 'w2vlexca2vrt',
+                                                             'cnnmca2v', 'cnnmca2vrt'
                                                               ],
                         type=str)  # w2v, w2vlex, attention
     parser.add_argument('--expanded', default=0, choices=[0, 1, 2, 3, 4, 5, 6, 7, 8, 1234567], type=int)
