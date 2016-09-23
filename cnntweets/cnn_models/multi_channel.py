@@ -144,7 +144,7 @@ class W2V_LEX_CNN_MC_A2V(object):
             l2_reg_lambda=0.0, l1_reg_lambda=0.0):
 
         # Placeholders for input, output and dropout
-        self.input_x_2c = tf.placeholder(tf.float32, [None, sequence_length, embedding_size, 2], name="input_x")
+        self.input_x_2c = tf.placeholder(tf.float32, [None, sequence_length, embedding_size, 2], name="input_x_2c")
         self.input_x = tf.placeholder(tf.float32, [None, sequence_length, embedding_size], name="input_x")
         self.input_y = tf.placeholder(tf.float32, [None, num_classes], name="input_y")
         self.dropout_keep_prob = tf.placeholder(tf.float32, name="dropout_keep_prob")
