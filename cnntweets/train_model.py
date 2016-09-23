@@ -653,7 +653,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                 Evaluates model on a dev set
                 """
                 if x_batch_fat is not None:
-                    if x_batch_lex is None:
+                    if multichannel is True:
                         feed_dict = {
                             cnn.input_x: x_batch_fat,
                             cnn.input_y: y_batch,
