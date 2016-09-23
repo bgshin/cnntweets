@@ -269,7 +269,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
     # unigram_lexicon_model = raw_model
 
     if simple_run:
-        if multichannel_a2v is True:
+        if multichannel_a2v is True or multichannel is True:
             x_train, y_train, x_lex_train, x_fat_train = \
                 cnn_data_helpers.load_data('trn_sample', w2vmodel, unigram_lexicon_model,
                                                                        max_len, multichannel=multichannel)
@@ -288,7 +288,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                                                                     multichannel=multichannel)
 
     else:
-        if multichannel_a2v is True:
+        if multichannel_a2v is True or multichannel is True:
             x_train, y_train, x_lex_train, x_fat_train = \
                 cnn_data_helpers.load_data('trn', w2vmodel, unigram_lexicon_model, max_len,
                                            rottenTomato=rt_data, multichannel=multichannel)
@@ -751,7 +751,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                     return accuracy
 
             # Generate batches
-            if multichannel_a2v is True:
+            if multichannel_a2v is True or multichannel is True:
                 batches = cnn_data_helpers.batch_iter(
                     list(zip(x_train, y_train, x_lex_train, x_fat_train)), FLAGS.batch_size, num_epochs)
             else:
@@ -761,7 +761,7 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
 
             # Training loop. For each batch...
             for batch in batches:
-                if multichannel_a2v is True:
+                if multichannel_a2v is True or multichannel is True:
                     x_batch, y_batch, x_batch_lex, x_batch_fat = zip(*batch)
                 else:
                     x_batch, y_batch, x_batch_lex = zip(*batch)
@@ -772,6 +772,9 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
                 else:
                     if multichannel_a2v is True:
                         train_step(x_batch, y_batch, x_batch_lex, x_batch_fat)
+                    elif multichannel is True:
+                        train_step(x_batch, y_batch, x_batch_lex=None, x_batch_fat=x_batch_fat,
+                                   multichannel=multichannel)
                     else:
                         train_step(x_batch, y_batch, x_batch_lex, multichannel=multichannel)
                     # train_step(x_batch, y_batch, x_batch_lex)
