@@ -271,14 +271,15 @@ def run_train(w2vsource, w2vdim, w2vnumfilters, lexdim, lexnumfilters, randomsee
     if simple_run:
         if multichannel_a2v is True or multichannel is True:
             x_train, y_train, x_lex_train, x_fat_train = \
-                cnn_data_helpers.load_data('trn_sample', w2vmodel, unigram_lexicon_model,
-                                                                       max_len, multichannel=multichannel)
+                cnn_data_helpers.load_data('trn_sample', w2vmodel, unigram_lexicon_model, max_len,
+                                           rottenTomato=rt_data, multichannel=multichannel)
             x_dev, y_dev, x_lex_dev, x_fat_dev = \
                 cnn_data_helpers.load_data('dev_sample', w2vmodel, unigram_lexicon_model, max_len,
-                                                                 multichannel=multichannel)
+                                           rottenTomato=rt_data, multichannel=multichannel)
+
             x_test, y_test, x_lex_test, x_fat_test = \
                 cnn_data_helpers.load_data('tst_sample', w2vmodel, unigram_lexicon_model, max_len,
-                                                                    multichannel=multichannel)
+                                           rottenTomato=rt_data, multichannel=multichannel)
         else:
             x_train, y_train, x_lex_train, _ = cnn_data_helpers.load_data('trn_sample', w2vmodel, unigram_lexicon_model,
                                                                        max_len, multichannel=multichannel)
@@ -870,7 +871,7 @@ if __name__ == "__main__":
     parser.add_argument('--lexdim', default=15, type=int)
     parser.add_argument('--lexnumfilters', default=9, type=int)
     parser.add_argument('--randomseed', default=1, type=int)
-    parser.add_argument('--model', default='cnnmcrt', choices=['w2v', 'w2vrt', 'w2vlex', 'w2vlexrt',
+    parser.add_argument('--model', default='cnnmca2vrt', choices=['w2v', 'w2vrt', 'w2vlex', 'w2vlexrt',
                                                              'att', 'attrt', 'attb', 'attbrt', 'a2v', 'a2vrt',
                                                              'a2vind', 'a2vindrt', 'a2vindb', 'a2vindbrt',
                                                              'a2vindw2v', 'a2vindw2vrt', 'a2vindlex', 'a2vindlexrt',
