@@ -268,9 +268,9 @@ def load_model_cnna2vind(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilte
 
 
                 if accuracy==0:
-                    return h_pool_flat[0], predictions[0], _b, scores, False
+                    return h_pool_flat[0], appended_pool[0], predictions[0], _b, scores, False
 
-                return h_pool_flat[0], predictions[0], _b, scores, True
+                return h_pool_flat[0], appended_pool[0], predictions[0], _b, scores, True
 
             def test_step(x_batch, y_batch, x_batch_lex=None):
                 feed_dict = {
@@ -287,39 +287,43 @@ def load_model_cnna2vind(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilte
 
                 return accuracy
 
-            pool_neg = []
-            pred_neg = []
-            correct_neg = []
-            score_neg = []
-            b_neg = []
-            gold_neg = []
+            pool_list = []
+            appended_pool_list = []
+            pred_list = []
+            correct_list = []
+            score_list = []
+            b_list = []
+            gold_list = []
             for idx in range(len(x_test_wrong)):
-                h_pool_flat, prediction, _b, score, correct = \
+                h_pool_flat, appended_pool, prediction, _b, score, correct = \
                     dev_step(tuple([x_test_wrong[idx]]), tuple([y_test_wrong[idx]]), tuple([x_lex_test_wrong[idx]]))
-                pool_neg.append(h_pool_flat)
-                pred_neg.append(prediction)
-                correct_neg.append(correct)
-                score_neg.append(score)
-                b_neg.append(_b)
-                gold_neg.append(y_test_wrong[idx])
+                pool_list.append(h_pool_flat)
+                appended_pool_list.append(appended_pool)
+                pred_list.append(prediction)
+                correct_list.append(correct)
+                score_list.append(score)
+                b_list.append(_b)
+                gold_list.append(y_test_wrong[idx])
 
-            print len(pool_neg), len(pool_obj), len(pool_pos)
+
+            print len(pool_list), len(pool_list[0]), len(appended_pool_list), len(appended_pool_list[0])
 
 
-            with open('./sigma_analysis.pickle', 'wb') as handle:
-                pickle.dump([index_neg, index_obj, index_pos], handle)
-                pickle.dump([pool_neg, pool_obj, pool_pos] , handle)
-                pickle.dump([pred_neg, pred_obj, pred_pos] , handle)
-                pickle.dump([correct_neg, correct_obj, correct_pos] , handle)
-                pickle.dump([score_neg, score_obj, score_pos], handle)
-                pickle.dump([b_neg, b_obj, b_pos], handle)
-                pickle.dump([gold_neg, gold_obj, gold_pos], handle)
-
+            with open('./attention_sigma_analysis.pickle', 'wb') as handle:
+                pickle.dump(wrong_index, handle)
+                pickle.dump(pool_list , handle)
+                pickle.dump(appended_pool_list, handle)
+                pickle.dump(pred_list , handle)
+                pickle.dump(correct_list , handle)
+                pickle.dump(score_list, handle)
+                pickle.dump(b_list, handle)
+                pickle.dump(gold_list, handle)
 
                 pickle.dump(vs[-2], handle)
 
             acc = test_step(x_test, y_test, x_lex_test)
             print 'acc=%f' % acc
+            print 'correct_list', correct_list.count(True), len(correct_list)
 
 
 def load_model_w2v(x_test, y_test, w2vdim, w2vnumfilters):
