@@ -7,7 +7,7 @@ import os
 from cnntweets.utils import cnn_data_helpers
 from cnntweets.cnn_models.w2v_lex_cnn import W2V_LEX_CNN
 from cnntweets.cnn_models.w2v_cnn import W2V_CNN
-from cnntweets.cnn_models.preattention_cnn import TextCNNAttention2VecIndividualLex
+from cnntweets.cnn_models.preattention_cnn import TextCNNAttention2VecIndividual
 from cnntweets.utils.word2vecReader import Word2Vec
 import gc
 import pickle
@@ -211,10 +211,10 @@ def load_dataset(w2vdim, max_len):
     return x_test, y_test, x_lex_test
 
 
-def load_model_cnna2vind(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2vnumfilters):
-    savepath = './models/model-3400-cnna2vind'
-    # savepath = './models/model-3400-w2v'
+def load_model_cnna2vind(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2vnumfilters, wrong_index,
+                             wrong_pred):
 
+    savepath = './models/model-3400-cnna2vind'
 
     with tf.Graph().as_default():
         session_conf = tf.ConfigProto(
@@ -222,7 +222,7 @@ def load_model_cnna2vind(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilte
           log_device_placement=FLAGS.log_device_placement)
         sess = tf.Session(config=session_conf)
         with sess.as_default():
-            cnn = TextCNNAttention2VecIndividualLex(
+            cnn = TextCNNAttention2VecIndividual(
                 sequence_length=60,
                 num_classes=3,
                 embedding_size=w2vdim,
@@ -245,42 +245,13 @@ def load_model_cnna2vind(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilte
                 for v in var:
                     vs.append(sess.run(v))
 
-            # if senti == 'objective':
-            #     y.append([0, 1, 0])
-            #
-            # elif senti == 'positive':
-            #     y.append([0, 0, 1])
-            #
-            # else:  # negative
-            #     y.append([1, 0, 0])
-
-
 
             print 'hello'
 
-            index_neg = np.where(y_test[:, 0] == 1)[0]
-            index_obj = np.where(y_test[:, 1] == 1)[0]
-            index_pos = np.where(y_test[:, 2] == 1)[0]
+            x_test_wrong = x_test[wrong_index]
+            y_test_wrong = y_test[wrong_index]
+            x_lex_test_wrong = x_lex_test[wrong_index]
 
-            x_test_neg = x_test[index_neg]
-            x_test_obj = x_test[index_obj]
-            x_test_pos = x_test[index_pos]
-
-            y_test_neg = y_test[index_neg]
-            y_test_obj = y_test[index_obj]
-            y_test_pos = y_test[index_pos]
-
-            x_lex_test_neg = x_lex_test[index_neg]
-            x_lex_test_obj = x_lex_test[index_obj]
-            x_lex_test_pos = x_lex_test[index_pos]
-
-
-            # batches = cnn_data_helpers.batch_iter(
-            #     list(zip(x_test, y_test, x_lex_test)), 1, 1)
-
-            # for idx, batch in enumerate(batches):
-            #     x_batch, y_batch, x_batch_lex = zip(*batch)
-            #     print idx, y_batch
 
             def dev_step(x_batch, y_batch, x_batch_lex=None):
                 feed_dict = {
@@ -323,49 +294,16 @@ def load_model_cnna2vind(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilte
             score_neg = []
             b_neg = []
             gold_neg = []
-            for idx in range(len(x_test_neg)):
+            for idx in range(len(x_test_wrong)):
                 h_pool_flat, prediction, _b, score, correct = \
-                    dev_step(tuple([x_test_neg[idx]]), tuple([y_test_neg[idx]]), tuple([x_lex_test_neg[idx]]))
+                    dev_step(tuple([x_test_wrong[idx]]), tuple([y_test_wrong[idx]]), tuple([x_lex_test_wrong[idx]]))
                 pool_neg.append(h_pool_flat)
                 pred_neg.append(prediction)
                 correct_neg.append(correct)
                 score_neg.append(score)
                 b_neg.append(_b)
-                gold_neg.append(y_test_neg[idx])
+                gold_neg.append(y_test_wrong[idx])
 
-            pool_obj = []
-            pred_obj = []
-            correct_obj = []
-            score_obj = []
-            b_obj = []
-            gold_obj = []
-            for idx in range(len(x_test_obj)):
-                h_pool_flat, prediction, _b, score, correct = \
-                    dev_step(tuple([x_test_obj[idx]]), tuple([y_test_obj[idx]]), tuple([x_lex_test_obj[idx]]))
-                pool_obj.append(h_pool_flat)
-                pred_obj.append(prediction)
-                correct_obj.append(correct)
-                score_obj.append(score)
-                b_obj.append(_b)
-                gold_obj.append(y_test_obj[idx])
-
-            pool_pos = []
-            pred_pos = []
-            correct_pos = []
-            score_pos = []
-            b_pos = []
-            gold_pos = []
-            for idx in range(len(x_test_pos)):
-                h_pool_flat, prediction, _b, score, correct = \
-                    dev_step(tuple([x_test_pos[idx]]), tuple([y_test_pos[idx]]), tuple([x_lex_test_pos[idx]]))
-                pool_pos.append(h_pool_flat)
-                pred_pos.append(prediction)
-                correct_pos.append(correct)
-                score_pos.append(score)
-                b_pos.append(_b)
-                gold_pos.append(y_test_pos[idx])
-
-            print len(index_neg), len(index_obj), len(index_pos)
             print len(pool_neg), len(pool_obj), len(pool_pos)
 
 
@@ -385,7 +323,7 @@ def load_model_cnna2vind(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilte
             print 'acc=%f' % acc
 
 
-def load_model_w2v(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2vnumfilters):
+def load_model_w2v(x_test, y_test, w2vdim, w2vnumfilters):
     savepath = './models/model-3400-w2v'
 
 
@@ -457,15 +395,17 @@ def load_model_w2v(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2
                 return accuracy
 
             pred = []
-            correct_index=[]
+            wrong_index=[]
+            wrong_pred = []
             for idx in range(len(x_test)):
                 prediction, score, correct = \
                     dev_step(tuple([x_test[idx]]), tuple([y_test[idx]]))
                     # dev_step(tuple([x_test[idx]]), tuple([y_test[idx]]), tuple([x_lex_test[idx]]))
                     # dev_step(x_test, y_test)
                 pred.append(prediction)
-                if correct==True:
-                    correct_index.append(idx)
+                if correct==False:
+                    wrong_index.append(idx)
+                    wrong_pred.append(prediction)
 
 
 
@@ -473,8 +413,8 @@ def load_model_w2v(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2
             print 'acc=%f' % acc
 
     print 'predlen', len(pred)
-    print 'correct_indexlen', len(correct_index)
-    return pred, correct_index
+    print 'wrong_indexlen', len(wrong_index)
+    return pred, wrong_index, wrong_pred
 
 
 if __name__ == "__main__":
@@ -491,6 +431,9 @@ if __name__ == "__main__":
     x_lex_test=[]
 
     x_test, y_test, x_lex_test = load_dataset(w2vdim, max_len)
-    load_model_w2v(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2vnumfilters)
+    pred, wrong_index, wrong_pred = load_model_w2v(x_test, y_test, w2vdim, w2vnumfilters)
+
+    load_model_cnna2vind(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2vnumfilters, wrong_index, wrong_pred)
+
 
 

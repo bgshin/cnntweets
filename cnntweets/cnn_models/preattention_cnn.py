@@ -1512,14 +1512,14 @@ class TextCNNAttention2VecIndividual(object):
 
             print '[lex_pool]', lex_pool  # (?, 60(seq_len), 1, 1) #select attention for lex
 
-            w2v_pool_sq = tf.expand_dims(tf.squeeze(w2v_pool, squeeze_dims=[2, 3]), -1)  # (?, 60, 1)
-            print '[w2v_pool_sq]', w2v_pool_sq
+            self.w2v_pool_sq = tf.expand_dims(tf.squeeze(w2v_pool, squeeze_dims=[2, 3]), -1)  # (?, 60, 1)
+            print '[w2v_pool_sq]', self.w2v_pool_sq
 
-            lex_pool_sq = tf.expand_dims(tf.squeeze(lex_pool, squeeze_dims=[2, 3]), -1)  # (?, 60, 1)
-            print '[lex_pool_sq]', lex_pool_sq
+            self.lex_pool_sq = tf.expand_dims(tf.squeeze(lex_pool, squeeze_dims=[2, 3]), -1)  # (?, 60, 1)
+            print '[lex_pool_sq]', self.lex_pool_sq
 
-            attentioned_w2v = tf.batch_matmul(self.embedded_chars_tr, w2v_pool_sq)
-            attentioned_lex = tf.batch_matmul(self.embedded_chars_lexicon_tr, lex_pool_sq)
+            attentioned_w2v = tf.batch_matmul(self.embedded_chars_tr, self.w2v_pool_sq)
+            attentioned_lex = tf.batch_matmul(self.embedded_chars_lexicon_tr, self.lex_pool_sq)
 
             attentioned_w2v_sq = tf.squeeze(attentioned_w2v, squeeze_dims=[2])
             attentioned_lex_sq = tf.squeeze(attentioned_lex, squeeze_dims=[2])
