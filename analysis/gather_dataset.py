@@ -423,7 +423,7 @@ def load_model_w2v(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2
                     cnn.input_x: x_batch,
                     cnn.input_y: y_batch,
                     # lexicon
-                    cnn.input_x_lexicon: x_batch_lex,
+                    # cnn.input_x_lexicon: x_batch_lex,
                     cnn.dropout_keep_prob: 1.0
                 }
 
@@ -441,7 +441,7 @@ def load_model_w2v(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2
                     cnn.input_x: x_batch,
                     cnn.input_y: y_batch,
                     # lexicon
-                    cnn.input_x_lexicon: x_batch_lex,
+                    # cnn.input_x_lexicon: x_batch_lex,
                     cnn.dropout_keep_prob: 1.0
                 }
 
@@ -455,12 +455,12 @@ def load_model_w2v(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2
             pred = []
             for idx in range(len(x_test)):
                 h_pool_flat, prediction, _b, score, correct = \
-                    dev_step(x_test, y_test, x_lex_test)
+                    dev_step(x_test, y_test)
                 pred.append(prediction)
 
 
 
-            acc = test_step(x_test, y_test, x_lex_test)
+            acc = test_step(x_test, y_test)
             print 'acc=%f' % acc
 
     print 'predlen', len(pred)
