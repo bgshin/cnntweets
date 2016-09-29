@@ -6,8 +6,8 @@ import re
 import os
 from cnntweets.utils import cnn_data_helpers
 from cnntweets.cnn_models.w2v_lex_cnn import W2V_LEX_CNN
-from cnn_models.w2v_cnn import W2V_CNN
-from cnn_models.preattention_cnn import TextCNNAttention2VecIndividualLex
+from cnntweets.cnn_models.w2v_cnn import W2V_CNN
+from cnntweets.cnn_models.preattention_cnn import TextCNNAttention2VecIndividualLex
 from cnntweets.utils.word2vecReader import Word2Vec
 import gc
 import pickle
