@@ -202,7 +202,9 @@ def load_dataset(w2vdim, max_len):
         unigram_lexicon_model = load_lexicon_unigram(15)
 
     with Timer("loading test dataset..."):
-        x_test, y_test, x_lex_test = cnn_data_helpers.load_data('tst', w2vmodel, unigram_lexicon_model, max_len)
+        x_test, y_test, x_lex_test, _ = cnn_data_helpers.load_data('tst', w2vmodel, unigram_lexicon_model, max_len,
+                                                                   rottenTomato=False, multichannel=False)
+
     del(w2vmodel)
     gc.collect()
 
