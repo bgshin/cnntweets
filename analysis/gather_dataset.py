@@ -307,8 +307,8 @@ def load_model_cnna2vind(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilte
                 score_list.append(score)
                 b_list.append(_b)
                 gold_list.append(y_test_wrong[idx])
-                w2v_pool_sq_list = [w2v_pool_sq]
-                lex_pool_sq_list = [lex_pool_sq]
+                w2v_pool_sq_list.append(w2v_pool_sq)
+                lex_pool_sq_list.append(lex_pool_sq)
 
 
             print len(pool_list), len(pool_list[0]), len(appended_pool_list), len(appended_pool_list[0])
