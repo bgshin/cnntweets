@@ -262,8 +262,8 @@ def load_model_cnna2vind(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilte
                     cnn.dropout_keep_prob: 1.0
                 }
 
-                accuracy, h_pool, h_pool_flat, predictions, _b, scores = sess.run(
-                    [ cnn.accuracy, cnn.h_pool, cnn.h_pool_flat, cnn.predictions, cnn._b, cnn.scores],
+                accuracy, h_pool_flat, appended_pool, predictions, _b, scores = sess.run(
+                    [ cnn.accuracy, cnn.h_pool_flat, cnn.appended_pool, cnn.predictions, cnn._b, cnn.scores],
                     feed_dict)
 
 
@@ -281,9 +281,8 @@ def load_model_cnna2vind(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilte
                     cnn.dropout_keep_prob: 1.0
                 }
 
-                loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1 = sess.run(
-                    [cnn.loss, cnn.accuracy,
-                     cnn.neg_r, cnn.neg_p, cnn.f1_neg, cnn.f1_pos, cnn.avg_f1],
+                loss, accuracy = sess.run(
+                    [cnn.loss, cnn.accuracy],
                     feed_dict)
 
                 return accuracy
