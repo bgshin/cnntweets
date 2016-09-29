@@ -262,15 +262,16 @@ def load_model_cnna2vind(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilte
                     cnn.dropout_keep_prob: 1.0
                 }
 
-                accuracy, h_pool_flat, appended_pool, predictions, _b, scores = sess.run(
-                    [ cnn.accuracy, cnn.h_pool_flat, cnn.appended_pool, cnn.predictions, cnn._b, cnn.scores],
+                accuracy, h_pool_flat, appended_pool, predictions, _b, scores, w2v_pool_sq, lex_pool_sq = sess.run(
+                    [ cnn.accuracy, cnn.h_pool_flat, cnn.appended_pool, cnn.predictions, cnn._b, cnn.scores,
+                      cnn.w2v_pool_sq, cnn.lex_pool_sq],
                     feed_dict)
 
 
                 if accuracy==0:
-                    return h_pool_flat[0], appended_pool[0], predictions[0], _b, scores, False
+                    return h_pool_flat[0], appended_pool[0], predictions[0], w2v_pool_sq[0], lex_pool_sq[0], _b, scores, False
 
-                return h_pool_flat[0], appended_pool[0], predictions[0], _b, scores, True
+                return h_pool_flat[0], appended_pool[0], predictions[0], w2v_pool_sq[0], lex_pool_sq[0], _b, scores, True
 
             def test_step(x_batch, y_batch, x_batch_lex=None):
                 feed_dict = {
@@ -294,8 +295,10 @@ def load_model_cnna2vind(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilte
             score_list = []
             b_list = []
             gold_list = []
+            w2v_pool_sq_list = []
+            lex_pool_sq_list = []
             for idx in range(len(x_test_wrong)):
-                h_pool_flat, appended_pool, prediction, _b, score, correct = \
+                h_pool_flat, appended_pool, prediction, w2v_pool_sq, lex_pool_sq, _b, score, correct = \
                     dev_step(tuple([x_test_wrong[idx]]), tuple([y_test_wrong[idx]]), tuple([x_lex_test_wrong[idx]]))
                 pool_list.append(h_pool_flat)
                 appended_pool_list.append(appended_pool)
@@ -304,6 +307,8 @@ def load_model_cnna2vind(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilte
                 score_list.append(score)
                 b_list.append(_b)
                 gold_list.append(y_test_wrong[idx])
+                w2v_pool_sq_list = [w2v_pool_sq]
+                lex_pool_sq_list = [lex_pool_sq]
 
 
             print len(pool_list), len(pool_list[0]), len(appended_pool_list), len(appended_pool_list[0])
@@ -318,8 +323,12 @@ def load_model_cnna2vind(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilte
                 pickle.dump(score_list, handle)
                 pickle.dump(b_list, handle)
                 pickle.dump(gold_list, handle)
+                pickle.dump(wrong_pred, handle)
+                pickle.dump(w2v_pool_sq_list, handle)
+                pickle.dump(lex_pool_sq_list, handle)
 
                 pickle.dump(vs[-2], handle)
+
 
             acc = test_step(x_test, y_test, x_lex_test)
             print 'acc=%f' % acc
@@ -427,7 +436,7 @@ if __name__ == "__main__":
     max_len = 60
     lexdim = 15
     w2vnumfilters = 64
-    lexnumfilters = 8
+    lexnumfilters = 9
 
     x_test=[]
     y_test=[]
