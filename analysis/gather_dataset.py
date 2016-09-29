@@ -427,14 +427,14 @@ def load_model_w2v(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2
                     cnn.dropout_keep_prob: 1.0
                 }
 
-                accuracy, h_pool, h_pool_flat, predictions, _b, scores = sess.run(
-                    [cnn.accuracy, cnn.h_pool, cnn.h_pool_flat, cnn.predictions, cnn._b, cnn.scores],
+                accuracy, predictions, scores = sess.run(
+                    [cnn.accuracy, cnn.predictions, cnn.scores],
                     feed_dict)
 
                 if accuracy == 0:
-                    return h_pool_flat[0], predictions[0], _b, scores, False
+                    return predictions[0], scores, False
 
-                return h_pool_flat[0], predictions[0], _b, scores, True
+                return predictions[0], scores, True
 
             def test_step(x_batch, y_batch, x_batch_lex=None):
                 feed_dict = {
@@ -445,18 +445,27 @@ def load_model_w2v(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2
                     cnn.dropout_keep_prob: 1.0
                 }
 
-                loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1 = sess.run(
-                    [cnn.loss, cnn.accuracy,
-                     cnn.neg_r, cnn.neg_p, cnn.f1_neg, cnn.f1_pos, cnn.avg_f1],
+                loss, accuracy, predictions, scores = sess.run(
+                    [cnn.loss, cnn.accuracy, cnn.predictions, cnn.scores],
                     feed_dict)
+
+                # loss, accuracy, neg_r, neg_p, f1_neg, f1_pos, avg_f1 = sess.run(
+                #     [cnn.loss, cnn.accuracy,
+                #      cnn.neg_r, cnn.neg_p, cnn.f1_neg, cnn.f1_pos, cnn.avg_f1],
+                #     feed_dict)
 
                 return accuracy
 
             pred = []
+            correct_index=[]
             for idx in range(len(x_test)):
-                h_pool_flat, prediction, _b, score, correct = \
-                    dev_step(x_test, y_test)
+                prediction, score, correct = \
+                    dev_step(tuple([x_test[idx]]), tuple([y_test[idx]]))
+                    # dev_step(tuple([x_test[idx]]), tuple([y_test[idx]]), tuple([x_lex_test[idx]]))
+                    # dev_step(x_test, y_test)
                 pred.append(prediction)
+                if correct==True:
+                    correct_index.append(idx)
 
 
 
@@ -464,7 +473,8 @@ def load_model_w2v(x_test, y_test, x_lex_test, w2vdim, lexdim, lexnumfilters, w2
             print 'acc=%f' % acc
 
     print 'predlen', len(pred)
-    return pred
+    print 'correct_indexlen', len(correct_index)
+    return pred, correct_index
 
 
 if __name__ == "__main__":
