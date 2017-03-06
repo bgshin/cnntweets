@@ -106,14 +106,15 @@
 
 ### Sentiment140AffLexNegLex
 * Name: [NRC Sentiment140 Lexicons](https://github.com/balikasg/SemEval2016-Twitter_Sentiment_Evaluation/tree/master/src/lexicons/Sentiment140AffLexNegLex)
-* @article{go2009twitter,
-  title={Twitter sentiment classification using distant supervision},
-  author={Go, Alec and Bhayani, Richa and Huang, Lei},
-  journal={CS224N Project Report, Stanford},
-  volume={1},
-  pages={12},
-  year={2009}
+* @article{kiritchenko2014sentiment,
+  title={Sentiment analysis of short informal texts},
+  author={Kiritchenko, Svetlana and Zhu, Xiaodan and Mohammad, Saif M},
+  journal={Journal of Artificial Intelligence Research},
+  volume={50},
+  pages={723--762},
+  year={2014}
 }
+
 * filename: S140-AFFLEX-NEGLEX-unigrams.txt
 * f = 3
 	* dim = 1: <score> is a real-valued sentiment score: score = PMI(w, pos) - PMI(w, neg), where PMI stands for Point-wise Mutual Information between a term w and the positive/negative class;

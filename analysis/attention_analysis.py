@@ -145,15 +145,45 @@ def analysis(cls):
             score_EAV[target] = w2vattsum_all[target][n] + lexattsum_all[target][n]
             score_all[target] = score_others[target] + score_EAV[target]
 
-            gold_label = np.argmax(gold_list[idx])
-            if np.argmax(score_others) != gold_label and np.argmax(score_EAV) == gold_label \
-                    and pred_list[idx] == gold_label:
-                print x_text[wrong_index[idx]]
+        gold_label = np.argmax(gold_list[idx])
+        # if np.argmax(score_others) != gold_label and np.argmax(score_EAV) == gold_label \
+        #         and pred_list[idx] == gold_label:
+        #     print x_text[wrong_index[idx]]
 
-        print 'w2v(%d), lex(%d), w2vatt(%d), lexatt(%d), others(%d), EAV(%d), all(%d), gold(%d), pred(%d)' \
-              %(np.argmax(score_w2v), np.argmax(score_lex), np.argmax(score_w2vatt), np.argmax(score_lexatt),
-                np.argmax(score_others), np.argmax(score_EAV), np.argmax(score_all),
-                np.argmax(gold_list[idx]), pred_list[idx])
+        if np.argmax(score_w2v) != gold_label and np.argmax(score_w2vatt) == gold_label \
+                and pred_list[idx] == gold_label:
+            # for kk, token in enumerate(x_text[wrong_index[idx]].split(' ')):
+            #     print '%s: %f' % (token, w2v_pool_sq_list[idx][kk])
+
+            output = ', '
+            att_demo_list=[]
+            for kk, token in enumerate(x_text[wrong_index[idx]].split(' ')):
+                att_demo_list.append(w2v_pool_sq_list[idx][kk][0])
+
+            output = output.join(map(str, att_demo_list))
+            print 'data=[%s];' %output
+
+            output = '\', \''
+            att_demo_str_list = []
+            for kk, token in enumerate(x_text[wrong_index[idx]].split(' ')):
+                if token.startswith('http'):
+                    att_demo_str_list.append('[LINK]')
+                else:
+                    att_demo_str_list.append(token.replace('\'', '\'\''))
+
+            output = output.join(map(str, att_demo_str_list))
+            print 'txtdata={\'%s\'}' % output
+
+            print 'datacell{index} = data;'
+            print 'datatxtcell{index} = txtdata;'
+            print 'index = index +1;'
+            # print 'gg'
+
+
+        # print 'w2v(%d), lex(%d), w2vatt(%d), lexatt(%d), others(%d), EAV(%d), all(%d), gold(%d), pred(%d)' \
+        #       %(np.argmax(score_w2v), np.argmax(score_lex), np.argmax(score_w2vatt), np.argmax(score_lexatt),
+        #         np.argmax(score_others), np.argmax(score_EAV), np.argmax(score_all),
+        #         np.argmax(gold_list[idx]), pred_list[idx])
 
         # print 'w2v-%d(%f), lex-%d(%f), w2vatt-%d(%f), lexatt-%d(%f), others-%d(%f), EAV-%d(%f), all-%d(%f)' \
         #       % (cls, score_w2v[cls], cls, score_lex[cls],
@@ -208,6 +238,6 @@ def analysis(cls):
 
 
 analysis(0) # 0 = neg
-analysis(1) # 1 = obj
-analysis(2) # 2 = pos
+# analysis(1) # 1 = obj
+# analysis(2) # 2 = pos
 print 'j'
